@@ -1,0 +1,677 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#fbfafd" />
+  <title>Kitchen Order Board</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Roboto', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+          colors: {
+            brand: {
+              purple: '#9810fa',
+              orange: '#ed8310',
+              blue: '#2f73e8',
+              green: '#20a568',
+              ink: '#27233f',
+              page: '#fbfafd'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    html { min-width: 320px; height: 100%; background: #fbfafd; }
+    body { min-width: 320px; min-height: 100%; }
+    @media (min-width: 768px) {
+      html, body { height: 100%; overflow: hidden !important; }
+    }
+    @media (max-width: 767px) {
+      html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
+    }
+    button:focus-visible { outline: 3px solid rgb(124 58 237 / 35%); outline-offset: 2px; }
+    .stage-card { animation: card-in .28s ease both; }
+    .stage-card.card-just-moved { animation: card-pop .34s cubic-bezier(.2,.8,.3,1.15); }
+    @keyframes card-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes card-pop { from { opacity: .4; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
+    .item-row.is-done .item-name, .item-row.is-done .item-note, .item-row.is-done .item-description,
+    .item-row.is-moved .item-name, .item-row.is-moved .item-note, .item-row.is-moved .item-description { opacity: .5; text-decoration: line-through; }
+    .item-row.is-moved { background: #faf9fc; }
+    .item-row.is-moved .item-quantity { opacity: .4; }
+    .item-move-button { color: #6b6580; border-color: #ded7ea; background: #fff; }
+    .item-move-button:hover:not(:disabled) { color: #7c3aed; border-color: #c4b5fd; background: #f6f2ff; }
+    .item-move-button:disabled { opacity: .38; cursor: not-allowed; }
+    .item-move-button.is-on { color: #fff !important; border-color: transparent !important; }
+    .item-move-button.is-on:hover:not(:disabled) { filter: brightness(1.08); }
+    /* ── Card: catatan order, meta server/seat, tombol aksi ── */
+    .order-note { font-style: italic; letter-spacing: .004em; }
+    .item-meta-row { border-top: 1px dashed rgba(39, 35, 63, .12); }
+    .item-meta { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; line-height: 1; }
+    .item-chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 7px; padding: 4px 9px; font-size: 11.5px; font-weight: 700; line-height: 1; white-space: nowrap; }
+    .item-chip svg { flex: none; }
+    .item-quantity { letter-spacing: -.01em; }
+    .band-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .moved-pill { box-shadow: 0 2px 6px rgba(39, 35, 63, .07); }
+    .stage-choice:disabled { border-color: #e6e0ef !important; color: #b3adc2 !important; background: #f8f6fb !important; cursor: not-allowed; }
+    .stage-choice:disabled:hover { transform: none !important; filter: none !important; }
+    /* ── Dropdown tombol ••• ── */
+    .more-menu { animation: menu-in .14s ease both; }
+    .more-menu-item { display: flex; width: 100%; align-items: center; gap: 8px; border-radius: 8px; padding: 7px 9px; text-align: left; font-size: 12.5px; font-weight: 600; line-height: 1.2; color: #3d3858; transition: background .12s ease, color .12s ease; }
+    .more-menu-item:hover, .more-menu-item:focus-visible { background: #f6f2ff; color: #7c3aed; outline: none; }
+    .more-menu-item .mm-dot { width: 8px; height: 8px; flex: none; border-radius: 999px; }
+    .more-menu-sep { height: 1px; margin: 4px 7px; background: #ece7f5; }
+    .timer.is-warning { border-color: #d93838 !important; color: #c62828 !important; }
+    .timer.is-warning svg { color: #d93838 !important; }
+    .order-list::-webkit-scrollbar { display: none; }
+    .order-list { scrollbar-width: none; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+    /* ── App shell: side navigation + top header ── */
+    #appSidebar { width: 84px; transition: width .24s ease, opacity .18s ease; }
+    .sidebar-collapsed #appSidebar { width: 0; min-width: 0; opacity: 0; overflow: hidden; border-right-width: 0; }
+    .nav-indicator { display: none; }
+    .nav-link.is-active, .nav-link.is-active:hover { background: #f3e8ff; color: #7c3aed; }
+    .nav-link.is-active .nav-indicator { display: block; }
+    [data-menu-item] { height: 36px; min-height: 36px; border-radius: 999px; padding-left: 13px; padding-right: 13px; }
+    [data-menu-item][aria-pressed="true"], [data-menu-item][aria-pressed="true"]:hover { background: #9810fa; color: #fff; font-weight: 700; }
+    [data-menu-item][aria-pressed="true"] span:first-child { color: #fff; }
+    [data-menu-item][aria-pressed="true"] span:last-child { background: #fff; color: #9810fa; }
+    /* ── Side nav sub kategori: tinggi card 36px, tanpa gap antar item ── */
+    .nav-subcat-list { display: block; margin: 0; padding: 0; list-style: none; }
+    .nav-subcat-list > li { display: block; height: 36px; min-height: 36px; margin: 0; padding: 0; }
+    .nav-subcat-list > li + li { margin-top: 0; padding-top: 0; }
+    .workspace-option .ws-check { visibility: hidden; }
+    .workspace-option.is-selected .ws-check { visibility: visible; }
+    .app-menu { animation: menu-in .14s ease both; }
+    .nav-scroll::-webkit-scrollbar, .app-menu::-webkit-scrollbar { display: none; }
+    .nav-scroll, .app-menu { scrollbar-width: none; }
+    /* ── Search: kotak, melebar saat diklik ── */
+    #searchWrap { width: 35px; transition: width .3s cubic-bezier(.4,0,.2,1), border-color .2s ease, box-shadow .2s ease; }
+    #searchWrap.is-open { width: min(270px, 60vw); border-color: #9810fa; box-shadow: 0 4px 14px rgba(39,35,63,.10); }
+    #searchInput { opacity: 0; visibility: hidden; transition: opacity .18s ease .08s, visibility 0s linear .3s; }
+    #searchWrap.is-open #searchInput { opacity: 1; visibility: visible; transition: opacity .18s ease .12s, visibility 0s linear 0s; }
+    #searchClear { display: none; }
+    #searchWrap.has-text #searchClear { display: grid; }
+    @keyframes menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen overflow-x-hidden bg-brand-page font-sans text-brand-ink antialiased md:overflow-hidden">
+  <!-- ══════════ APP SHELL: SIDE NAVIGATION + HEADER ══════════ -->
+  <div id="shellLayout" class="flex min-h-screen md:h-screen md:min-h-0">
+    <!-- <aside id="appSidebar" class="relative z-40 hidden shrink-0 flex-col border-r border-[#eeecf4] bg-white md:flex" aria-label="Navigasi utama">
+      <a href="#" class="flex h-[68px] shrink-0 items-center justify-center" aria-label="Logo" title="Kitchen Order Board">
+        <img src="bigdeals.svg" alt="" class="w-10 h-10">
+      </a>
+      <nav class="nav-scroll flex min-h-0 flex-1 flex-col items-center gap-[7px] overflow-y-auto px-2 pb-4" aria-label="Menu utama">
+        <button type="button" class="nav-link is-active relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Dashboard" title="Dashboard" aria-label="Dashboard" aria-current="page"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10.5 9-7.5 9 7.5V20a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20Z"/><path d="M9 21.5v-7h6v7"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Analytics" title="Analytics" aria-label="Analytics"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Properties" title="Properties" aria-label="Properties"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01M12 15h.01M9 21v-3h6v3"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Guests" title="Guests" aria-label="Guests"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 5.2a3.5 3.5 0 0 1 0 5.6"/><path d="M17.8 14.1a6.5 6.5 0 0 1 3.7 5.9"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Growth" title="Growth" aria-label="Growth"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Team" title="Team" aria-label="Team"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 11.2-4.4"/><circle cx="17.5" cy="16.5" r="2.5"/><path d="M17.5 13.4v1M17.5 18.6v1M20.1 15l-.8.5M15.7 17.5l-.8.5M20.1 18l-.8-.5M15.7 15.5l-.8-.5"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Support" title="Support" aria-label="Support"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Outlets" title="Outlets" aria-label="Outlets"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V10"/><path d="M2.5 7 4 3.5A1 1 0 0 1 5 3h14a1 1 0 0 1 1 .5L21.5 7"/><path d="M2.5 7h19"/><path d="M10 21v-5a2 2 0 0 1 4 0v5"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Reports" title="Reports" aria-label="Reports"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Finance" title="Finance" aria-label="Finance"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-6 9 6"/><path d="M4 9v10M8 9v10M16 9v10M20 9v10"/><path d="M2 21h20"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Printing" title="Printing" aria-label="Printing"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Vault" title="Vault" aria-label="Vault"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="5" rx="1"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Documents" title="Documents" aria-label="Documents"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="M12 11v6"/><path d="m9 14 3 3 3-3"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Tasks" title="Tasks" aria-label="Tasks"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></button>
+        <button type="button" class="nav-link relative flex h-12 w-[68px] items-center justify-center rounded-xl text-[#5d5872] transition hover:bg-[#f4f1fa] hover:text-violet-600" data-nav="Integrations" title="Integrations" aria-label="Integrations"><span class="nav-indicator absolute -right-[7px] top-0 h-full w-[4px] rounded-full bg-violet-600"></span><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg></button>
+      </nav>
+    </aside> -->
+    <div class="flex min-w-0 flex-1 flex-col md:h-full md:min-h-0">
+      <!-- <header class="sticky top-0 z-30 flex h-[72px] shrink-0 items-center justify-between gap-3 border-b border-[#eeecf4] bg-white px-4 md:px-5">
+        <div class="flex min-w-0 items-center gap-3">
+          <button type="button" id="sidebarToggle" class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#e4e2ec] bg-white text-[#4b4664] transition hover:border-violet-300 hover:text-violet-600 md:inline-flex" aria-controls="shellLayout" aria-expanded="true" title="Buka/tutup sidebar" aria-label="Buka/tutup sidebar"><svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M9 3v18"/><path d="M13.5 9h3.5M13.5 13h3.5"/></svg></button>
+          <h1 id="pageTitle" class="truncate text-[19px] font-bold tracking-tight text-[#1e1b2e]">Dashboard</h1>
+        </div>
+        <div class="flex items-center gap-2 md:gap-2.5">
+          <div class="relative hidden sm:block">
+            <button type="button" class="flex items-center gap-2 rounded-lg px-1.5 py-1 text-left transition hover:bg-[#f5f2fb]" data-menu-target="workspaceMenu" aria-haspopup="menu" aria-expanded="false" aria-controls="workspaceMenu">
+              <img src="https://i.pravatar.cc/40?img=32" alt="" class="h-6 w-6 shrink-0 rounded-md object-cover ring-1 ring-black/5" />
+              <span id="workspaceLabel" class="max-w-[150px] truncate text-sm font-semibold text-[#2b2740]">Property Developer</span>
+              <svg class="h-4 w-4 shrink-0 text-[#8b86a0]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div id="workspaceMenu" class="app-menu absolute right-0 top-full z-50 mt-2 hidden w-56 rounded-xl border border-[#eae7f2] bg-white p-1.5 shadow-[0_12px_32px_rgba(39,35,63,.14)]" role="menu" aria-label="Pilih workspace">
+              <button type="button" role="menuitem" data-workspace="Property Developer" class="workspace-option is-selected flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[#3d3858] hover:bg-[#f6f2ff] hover:text-[#7c3aed]">Property Developer<svg class="ws-check h-4 w-4 text-[#7c3aed]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+              <button type="button" role="menuitem" data-workspace="Marketing Site" class="workspace-option flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[#3d3858] hover:bg-[#f6f2ff] hover:text-[#7c3aed]">Marketing Site<svg class="ws-check h-4 w-4 text-[#7c3aed]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+              <button type="button" role="menuitem" data-workspace="Rental Unit" class="workspace-option flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[#3d3858] hover:bg-[#f6f2ff] hover:text-[#7c3aed]">Rental Unit<svg class="ws-check h-4 w-4 text-[#7c3aed]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+            </div>
+          </div>
+          <div class="relative">
+            <button type="button" class="grid h-9 w-9 place-items-center rounded-lg border border-[#e4e2ec] bg-white text-[#4b4664] transition hover:border-violet-300 hover:text-violet-600" data-menu-target="appsMenu" aria-haspopup="menu" aria-expanded="false" aria-controls="appsMenu" title="Apps" aria-label="Buka menu apps"><svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7" height="4.5" rx="1.5"/><rect x="13.5" y="10.5" width="7" height="10.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg></button>
+            <div id="appsMenu" class="app-menu absolute right-0 top-full z-50 mt-2 hidden w-52 rounded-xl border border-[#eae7f2] bg-white p-1.5 shadow-[0_12px_32px_rgba(39,35,63,.14)]" role="menu" aria-label="Daftar apps">
+              <button type="button" role="menuitem" data-notification="Membuka app Bookings" class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-[#3d3858] hover:bg-[#f6f2ff] hover:text-[#7c3aed]"><span class="h-2 w-2 rounded-full bg-brand-purple"></span>Bookings</button>
+              <button type="button" role="menuitem" data-notification="Membuka app Invoices" class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-[#3d3858] hover:bg-[#f6f2ff] hover:text-[#7c3aed]"><span class="h-2 w-2 rounded-full bg-brand-orange"></span>Invoices</button>
+              <button type="button" role="menuitem" data-notification="Membuka app Calendar" class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-[#3d3858] hover:bg-[#f6f2ff] hover:text-[#7c3aed]"><span class="h-2 w-2 rounded-full bg-brand-blue"></span>Calendar</button>
+            </div>
+          </div>
+          <div class="relative">
+            <button type="button" class="grid h-9 w-9 place-items-center rounded-lg text-[#5d5872] transition hover:bg-[#f5f2fb] hover:text-violet-600" data-menu-target="notificationMenu" aria-haspopup="menu" aria-expanded="false" aria-controls="notificationMenu" title="Notifikasi" aria-label="Buka notifikasi"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+            <div id="notificationMenu" class="app-menu absolute right-0 top-full z-50 mt-2 hidden w-64 rounded-xl border border-[#eae7f2] bg-white p-1.5 shadow-[0_12px_32px_rgba(39,35,63,.14)]" role="menu" aria-label="Daftar notifikasi">
+              <p class="px-2.5 pb-1.5 pt-1 text-[11px] font-bold uppercase tracking-wide text-[#9b95ad]">Notifikasi</p>
+              <button type="button" role="menuitem" data-notification="3 unit baru menunggu verifikasi" class="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-[#3d3858] hover:bg-[#f6f2ff] hover:text-[#7c3aed]"><span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-purple"></span>3 unit baru menunggu verifikasi</button>
+              <button type="button" role="menuitem" data-notification="Laporan mingguan siap diunduh" class="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-[#3d3858] hover:bg-[#f6f2ff] hover:text-[#7c3aed]"><span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-orange"></span>Laporan mingguan siap diunduh</button>
+            </div>
+          </div>
+          <button type="button" id="fullscreenButton" class="grid h-9 w-9 place-items-center rounded-lg text-[#5d5872] transition hover:bg-[#f5f2fb] hover:text-violet-600" title="Layar penuh" aria-label="Aktifkan layar penuh"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+          <button type="button" class="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 transition hover:bg-[#f5f2fb]" title="Akun" aria-label="Menu akun Ghulam">
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-purple text-sm font-bold text-white">G</span>
+            <span class="hidden text-sm font-semibold text-[#2b2740] md:inline">Ghulam</span>
+          </button>
+        </div>
+      </header> -->
+      <div class="min-h-0 flex-1 p-2 md:overflow-hidden">
+  <div class="grid min-h-[calc(100vh-72px)] grid-cols-1 gap-3 overflow-y-auto p-2 md:h-full md:min-h-0 md:grid-cols-[208px_minmax(0,1fr)] md:gap-[11px] md:overflow-hidden md:p-[5px_4px_12px]">
+    <aside class="h-auto min-h-0 overflow-y-auto rounded-[11px] border border-[#e2c9f3] bg-[#f8f5fa] p-4 scrollbar-thin md:h-[calc(100vh-89px)] md:min-h-[610px]" aria-label="Menu restoran">
+      <section aria-labelledby="main-course-heading">
+        <h2 id="main-course-heading" class="mb-[15px] border-b-2 border-brand-gray pb-[10px] text-[14px] font-extrabold uppercase leading-none tracking-[.02em] text-[#3d3858] mx-2">Main Course</h2>
+        <ul class="nav-subcat-list">
+          <li><button type="button" data-menu-item="Nasi Goreng Spesial" aria-pressed="false" class="group flex h-[36px] w-full items-center justify-between rounded-lg px-2 py-0 text-left text-sm font-medium text-[#5d586c] transition hover:bg-[#f7f0fb] hover:text-brand-purple focus-visible:outline-none"><span class="leading-[1.15]">Nasi Goreng<br />Spesial</span><span class="grid h-[27px] w-[27px] shrink-0 place-items-center rounded-full bg-brand-purple text-xs font-extrabold leading-none text-white">2</span></button></li>
+          <li><button type="button" data-menu-item="Beef Black Pepper" aria-pressed="false" class="group flex h-[36px] w-full items-center justify-between rounded-lg px-2 py-0 text-left text-sm font-medium text-[#5d586c] transition hover:bg-[#f7f0fb] hover:text-brand-purple focus-visible:outline-none"><span class="leading-[1.15]">Beef Black Pepper</span><span class="grid h-[27px] w-[27px] shrink-0 place-items-center rounded-full bg-brand-purple text-xs font-extrabold leading-none text-white">2</span></button></li>
+          <li><button type="button" data-menu-item="Ayam Bakar Madu" aria-pressed="false" class="group flex h-[36px] w-full items-center justify-between rounded-lg px-2 py-0 text-left text-sm font-medium text-[#5d586c] transition hover:bg-[#f7f0fb] hover:text-brand-purple focus-visible:outline-none"><span class="leading-[1.15]">Ayam Bakar Madu</span><span class="grid h-[27px] w-[27px] shrink-0 place-items-center rounded-full bg-brand-purple text-xs font-extrabold leading-none text-white">2</span></button></li>
+        </ul>
+      </section>
+      <section class="mt-5" aria-labelledby="beverages-heading">
+        <h2 id="beverages-heading" class="mb-[15px] border-b-2 border-brand-gray pb-[10px] text-[14px] font-extrabold uppercase leading-none tracking-[.02em] text-[#3d3858] mx-2">Beverages</h2>
+        <ul class="nav-subcat-list">
+          <li><button type="button" data-menu-item="Iced Lemon Tea" aria-pressed="false" class="group flex h-[36px] w-full items-center justify-between rounded-lg px-2 py-0 text-left text-sm font-medium text-[#5d586c] transition hover:bg-[#f7f0fb] hover:text-brand-purple focus-visible:outline-none"><span class="leading-[1.15]">Iced Lemon Tea</span><span class="grid h-[27px] w-[27px] shrink-0 place-items-center rounded-full bg-brand-purple text-xs font-extrabold leading-none text-white">2</span></button></li>
+          <li><button type="button" data-menu-item="Lychee Mojito" aria-pressed="false" class="group flex h-[36px] w-full items-center justify-between rounded-lg px-2 py-0 text-left text-sm font-medium text-[#5d586c] transition hover:bg-[#f7f0fb] hover:text-brand-purple focus-visible:outline-none"><span class="leading-[1.15]">Lychee Mojito</span><span class="grid h-[27px] w-[27px] shrink-0 place-items-center rounded-full bg-brand-purple text-xs font-extrabold leading-none text-white">2</span></button></li>
+          <li><button type="button" data-menu-item="Hot Matcha Latte" aria-pressed="false" class="group flex h-[36px] w-full items-center justify-between rounded-lg px-2 py-0 text-left text-sm font-medium text-[#5d586c] transition hover:bg-[#f7f0fb] hover:text-brand-purple focus-visible:outline-none"><span class="leading-[1.15]">Hot Matcha Latte</span><span class="grid h-[27px] w-[27px] shrink-0 place-items-center rounded-full bg-brand-purple text-xs font-extrabold leading-none text-white">2</span></button></li>
+        </ul>
+      </section>
+      <section class="mt-5" aria-labelledby="desserts-heading">
+        <h2 id="desserts-heading" class="mb-[15px] border-b-2 border-brand-gray pb-[10px] text-[14px] font-extrabold uppercase leading-none tracking-[.02em] text-[#3d3858] mx-2">Desserts</h2>
+        <ul class="nav-subcat-list">
+          <li><button type="button" data-menu-item="Choco Lava Cake" aria-pressed="false" class="group flex h-[36px] w-full items-center justify-between rounded-lg px-2 py-0 text-left text-sm font-medium text-[#5d586c] transition hover:bg-[#f7f0fb] hover:text-brand-purple focus-visible:outline-none"><span class="leading-[1.15]">Choco Lava Cake</span><span class="grid h-[27px] w-[27px] shrink-0 place-items-center rounded-full bg-brand-purple text-xs font-extrabold leading-none text-white">2</span></button></li>
+          <li><button type="button" data-menu-item="Vanilla Gelato" aria-pressed="false" class="group flex h-[36px] w-full items-center justify-between rounded-lg px-2 py-0 text-left text-sm font-medium text-[#5d586c] transition hover:bg-[#f7f0fb] hover:text-brand-purple focus-visible:outline-none"><span class="leading-[1.15]">Vanilla Gelato</span><span class="grid h-[27px] w-[27px] shrink-0 place-items-center rounded-full bg-brand-purple text-xs font-extrabold leading-none text-white">2</span></button></li>
+        </ul>
+      </section>
+    </aside>
+    <main class="min-h-0 min-w-0 md:flex md:h-full md:flex-col md:min-h-0">
+      <div class="mb-[10px] flex h-[35px] shrink-0 items-center gap-2">
+        <nav id="statusTabs" class="flex h-[35px] min-w-0 flex-1 items-stretch gap-2 overflow-x-auto" aria-label="Status pesanan">
+        <button type="button" data-stage="new" aria-pressed="true" class="status-tab inline-flex h-[35px] w-[92px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-[#dedde3] bg-white px-2.5 text-sm font-bold text-[#6b6580] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange data-[active=true]:border-brand-orange data-[active=true]:bg-brand-orange data-[active=true]:text-white">New <span data-count="new" class="inline-grid min-w-5 place-items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-bold leading-none text-slate-500 data-[active=true]:bg-white data-[active=true]:text-slate-800">0</span></button>
+        <button type="button" data-stage="preparing" aria-pressed="false" class="status-tab inline-flex h-[35px] w-[122px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-[#dedde3] bg-white px-2.5 text-sm font-bold text-[#6b6580] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange data-[active=true]:border-brand-orange data-[active=true]:bg-brand-orange data-[active=true]:text-white">Preparing <span data-count="preparing" class="inline-grid min-w-5 place-items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-bold leading-none text-slate-500 data-[active=true]:bg-white data-[active=true]:text-slate-800">0</span></button>
+        <button type="button" data-stage="ready" aria-pressed="false" class="status-tab inline-flex h-[35px] w-[107px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-[#dedde3] bg-white px-2.5 text-sm font-bold text-[#6b6580] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange data-[active=true]:border-brand-orange data-[active=true]:bg-brand-orange data-[active=true]:text-white">Ready <span data-count="ready" class="inline-grid min-w-5 place-items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-bold leading-none text-slate-500 data-[active=true]:bg-white data-[active=true]:text-slate-800">0</span></button>
+        <button type="button" data-stage="served" aria-pressed="false" class="status-tab inline-flex h-[35px] w-[92px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-[#dedde3] bg-white px-2.5 text-sm font-bold text-[#6b6580] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange data-[active=true]:border-brand-orange data-[active=true]:bg-brand-orange data-[active=true]:text-white">Served</button>
+        </nav>
+        <div id="searchWrap" class="flex h-[35px] shrink-0 items-center overflow-hidden rounded-xl border border-[#dedde3] bg-white shadow-sm">
+          <button type="button" id="searchToggle" class="grid h-[35px] w-[35px] shrink-0 place-items-center text-[#5d5872] transition hover:text-brand-purple" aria-expanded="false" aria-controls="searchInput" title="Search" aria-label="Buka pencarian">
+            <svg class="h-[17px] w-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </button>
+          <input id="searchInput" type="text" placeholder="Search" autocomplete="off" class="h-full min-w-0 flex-1 bg-transparent px-1 text-sm font-medium text-[#27233f] placeholder:font-medium placeholder:text-[#a8a3b8] focus:outline-none" aria-label="Cari pesanan" />
+          <button type="button" id="searchClear" class="grid h-[35px] w-[35px] shrink-0 place-items-center text-[#8b86a0] transition hover:text-brand-purple" title="Hapus pencarian" aria-label="Hapus pencarian">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <section class="board-wrap flex min-h-0 min-w-0 flex-col gap-4 md:flex-1" aria-labelledby="boardHeading">
+        <h1 id="boardHeading" class="sr-only">Kitchen order board</h1>
+        <div id="orderList" class="order-list grid min-h-0 max-h-[calc(100vh-197px)] auto-rows-max grid-cols-1 content-start gap-4 overflow-y-auto overscroll-contain pr-0.5 md:max-h-none md:flex-1 md:grid-cols-2 xl:grid-cols-3" aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+      </div>
+    </div>
+  </div>
+  <div id="toast" class="fixed bottom-5 right-5 z-20 max-w-[calc(100vw-2.5rem)] rounded-xl border border-slate-200 bg-slate-900 px-4 py-3 text-sm font-semibold text-white opacity-0 shadow-xl transition duration-200" role="status" aria-live="polite"></div>
+  <script>
+    const ICONS = {
+      clock: '<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+      user: '<svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg>',
+      check: '<svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
+      play: '<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg>',
+      checkCircle: '<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.7 2.7L16.5 9"/></svg>',
+      move: '<svg class="h-[17px] w-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>',
+      serve: '<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18h18"/><path d="M5 18v-4a7 7 0 0 1 14 0v4"/><path d="M12 7V5"/></svg>',
+      seat: '<svg class="h-[13px] w-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11V6a2 2 0 0 1 4 0v5"/><path d="M7 11h8a2 2 0 0 1 2 2v2H7z"/><path d="M9 15v5"/><path d="M15 15v3"/></svg>',
+      userSm: '<svg class="h-[14px] w-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg>',
+      more: '<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>'
+    };
+    // ── Pita waktu (elapsed order): 0-15 mtr hijau · 15-30 mtr oranye · 30-60 mtr merah ──
+    const TIME_BANDS = [
+      { key: 'fresh',    max: 900,          label: 'On time',  soft: '#eaf9f1', border: '#a8dfc5', accent: '#1f9d5f', deep: '#0e5f3d', wash: '#d5f1e4' },
+      { key: 'warning',  max: 1800,         label: 'Warning',  soft: '#fff4e8', border: '#f4c28c', accent: '#ed8310', deep: '#8f4a05', wash: '#ffe9d2' },
+      { key: 'late',     max: 3600,         label: 'Late',     soft: '#fdecec', border: '#f3b3b3', accent: '#d93838', deep: '#8a1f1f', wash: '#fadada' },
+      { key: 'overdue',  max: Number.POSITIVE_INFINITY, label: 'Overdue', soft: '#fbe0e0', border: '#e79a9a', accent: '#b91c1c', deep: '#7f1414', wash: '#f6cccc' }
+    ];
+    function timeBand(elapsedSeconds) {
+      const value = Math.max(0, Number(elapsedSeconds) || 0);
+      return TIME_BANDS.find(band => value < band.max) || TIME_BANDS[TIME_BANDS.length - 1];
+    }
+    function elapsedOf(order) {
+      const value = Number(order.elapsed);
+      if (Number.isFinite(value) && value >= 0) return value;
+      return Math.max(0, (STAGES[order.stage] ? STAGES[order.stage].duration : 0) - (Number(order.remaining) || 0));
+    }
+    function bandOf(order) { return timeBand(elapsedOf(order)); }
+    const STAGES = {
+      new: { label: 'New', next: 'preparing', duration: 435, action: 'PREPARING', icon: 'play', soft: '#f4eeff', border: '#cda5f5', accent: '#9810fa', deep: '#4a1a86' },
+      preparing: { label: 'Preparing', next: 'ready', duration: 600, action: 'READY', icon: 'checkCircle', soft: '#fff4e8', border: '#f4c28c', accent: '#d96f08', deep: '#8f4a05' },
+      ready: { label: 'Ready', next: 'served', duration: 300, action: 'SERVED', icon: 'serve', soft: '#edf4ff', border: '#a9c8f8', accent: '#2667d7', deep: '#1a4a91' },
+      served: { label: 'Served', next: null, duration: 0, action: 'ORDER SERVED', icon: 'checkCircle', soft: '#eaf9f1', border: '#a8dfc5', accent: '#168b56', deep: '#0e5f3d' }
+    };
+    const item = (qty, name, note = 'Crispy • More Sauce', description = '', server = '', seat = '') => ({ qty, name, note, description, server, seat });
+    const makeOrder = (id, stage, customer, table, time, remaining, items, extra = {}) => ({ id, stage, customer, table, time, remaining, items, ...extra });
+    // elapsed (detik) = umur order → menentukan pita warna: <900 hijau · <1800 oranye · <3600 merah
+    const initialOrders = [
+      makeOrder(1, 'new', 'RITA SUGIARTO', 'Table 06', '15:30', 435, [item(2, 'Ayam Goreng Spesial'), item(2, 'Ayam Goreng Spesial', 'Crispy • More Sauce', '', 'Sarah', 'Seat 05'), item(2, 'Ayam Goreng Spesial'), item(2, 'Ayam Goreng Spesial', 'Crispy • More Sauce', '', 'Sarah', 'Seat 05')], { elapsed: 180, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(2, 'new', 'ANDI PRATAMA', 'Table 04', '14:30', 388, [item(2, 'Nasi Goreng Spesial', 'Extra sambal', '', 'Dimas', 'Seat 02'), item(1, 'Iced Lemon Tea', 'Less ice')], { elapsed: 1020, description: 'Extra sambal di meja, tolong cepat ya' }),
+      makeOrder(3, 'new', 'RUDI IRAWAN', 'Table 05', '15:30', 360, [item(1, 'Beef Black Pepper', 'Medium rare'), item(2, 'Hot Matcha Latte', 'Oat milk', '', 'Sarah', 'Seat 05')], { elapsed: 2340, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(4, 'new', 'RINA MELATI', 'Table 09', '15:28', 332, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(2, 'Lychee Mojito', 'Less ice')], { elapsed: 900, description: 'Pelanggan sudah menunggu lama' }),
+      makeOrder(5, 'new', 'AGUS WIJAYA', 'Table 10', '15:29', 310, [item(2, 'Choco Lava Cake', 'Warm')], { elapsed: 3900, description: 'Order terlambat, segera antre' }),
+      makeOrder(6, 'preparing', 'SITI RAHAYU', 'Table 02', '15:20', 420, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(2, 'Lychee Mojito', 'Less ice', '', 'Bayu', 'Seat 01')], { elapsed: 240, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(7, 'preparing', 'BUDI SANTOSO', 'Table 03', '15:25', 510, [item(2, 'Nasi Goreng Spesial', 'Crispy'), item(1, 'Choco Lava Cake', 'Warm')], { elapsed: 1200, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(8, 'preparing', 'DEWI ANGGRAENI', 'Table 01', '15:10', 366, [item(1, 'Beef Black Pepper', 'No onion'), item(2, 'Iced Lemon Tea', 'Less ice', '', 'Dimas', 'Seat 02')], { elapsed: 2700, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(9, 'preparing', 'FAJAR NUGROHO', 'Table 07', '15:15', 290, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(1, 'Vanilla Gelato', 'Chocolate')], { elapsed: 540, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(10, 'preparing', 'MAYA PUTRI', 'Table 08', '15:18', 244, [item(2, 'Nasi Goreng Spesial', 'Extra sambal', '', 'Sarah', 'Seat 05')], { elapsed: 1650, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(11, 'ready', 'EKO WIJAYA', 'Table 12', '15:12', 180, [item(2, 'Iced Lemon Tea', 'Less ice'), item(1, 'Choco Lava Cake', 'Warm', '', 'Bayu', 'Seat 01')], { elapsed: 210, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(12, 'ready', 'LINA KURNIA', 'Table 11', '15:05', 150, [item(1, 'Lychee Mojito', 'Less ice')], { elapsed: 1500, description: 'Siap saji ke meja 11' }),
+      makeOrder(13, 'served', 'HENDRA GUNAWAN', 'Table 07', '14:50', 0, [item(1, 'Beef Black Pepper', 'No onion')], { elapsed: 420, description: 'Lorem ipsum sit amet dolor' })
+    ];
+    const orderList = document.getElementById('orderList');
+    const tabs = document.getElementById('statusTabs');
+    const toast = document.getElementById('toast');
+    let orders = loadOrders();
+    let activeStage = 'new';
+    let selectedMenu = '';
+    let searchQuery = '';
+    let lastMovedId = null;
+    const selectedItemIds = new Set();
+    let toastTimer;
+    function clone(value) {
+      return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
+    }
+    function normalizeOrders(source) {
+      return source.map(order => {
+        const orderStage = STAGES[order.stage] ? order.stage : 'new';
+        const duration = STAGES[orderStage].duration;
+        const remaining = Number.isFinite(order.remaining) && order.remaining > 0 ? order.remaining : duration;
+        const elapsed = Number.isFinite(order.elapsed) && order.elapsed >= 0 ? order.elapsed : Math.max(0, duration - remaining);
+        return {
+          ...order,
+          stage: orderStage,
+          description: order.description || 'Lorem ipsum sit amet dolor',
+          elapsed,
+          remaining,
+          items: (order.items || []).map((entry, index) => {
+            const base = Array.isArray(entry)
+              ? { id: `${order.id}-${index + 1}`, ...item(entry[0], entry[1], entry[2], entry[3], entry[5], entry[6]) }
+              : { id: entry.id || `${order.id}-${index + 1}`, ...entry };
+            const itemStage = STAGES[base.stage] ? base.stage : orderStage;
+            return {
+              ...base,
+              stage: itemStage,
+              movedFrom: STAGES[base.movedFrom] && base.movedFrom !== itemStage ? base.movedFrom : null,
+              done: Boolean(base.done)
+            };
+          })
+        };
+      });
+    }
+    function loadOrders() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('kitchen-board-orders-v2'));
+        if (Array.isArray(saved) && saved.length) return normalizeOrders(saved);
+      } catch (_) { /* use demo data when storage is unavailable */ }
+      return normalizeOrders(clone(initialOrders));
+    }
+    function saveOrders() {
+      try { localStorage.setItem('kitchen-board-orders-v2', JSON.stringify(orders)); } catch (_) { /* persistence is optional */ }
+    }
+    function formatTime(seconds) {
+      const value = Math.max(0, Number(seconds) || 0);
+      return String(Math.floor(value / 60)).padStart(2, '0') + ':' + String(value % 60).padStart(2, '0');
+    }
+    function getOrder(id) { return orders.find(order => order.id === Number(id)); }
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.remove('opacity-0', 'translate-y-3');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-3');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+      }, 2400);
+    }
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+    }
+    function matchesMenu(order) {
+      if (!selectedMenu) return true;
+      const { active, archived } = columnItems(order, activeStage);
+      return [...active, ...archived].some(entry => entry.name === selectedMenu);
+    }
+    function matchesSearch(order) {
+      if (!searchQuery) return true;
+      const haystack = [order.customer, order.table, ...order.items.map(entry => entry.name)].join(' ').toLowerCase();
+      return haystack.includes(searchQuery.toLowerCase());
+    }
+    function columnItems(order, stage) {
+      return {
+        active: order.items.filter(entry => entry.stage === stage),
+        archived: order.items.filter(entry => entry.stage !== stage && entry.movedFrom === stage)
+      };
+    }
+    function orderInStage(order, stage) {
+      return order.items.some(entry => entry.stage === stage);
+    }
+    function visibleOrders() {
+      return orders.filter(order => orderInStage(order, activeStage) && matchesMenu(order) && matchesSearch(order));
+    }
+    function actionState(order, stage) {
+      const config = STAGES[stage];
+      const items = order.items.filter(entry => entry.stage === stage);
+      const total = items.length;
+      return { stage: config, total, empty: total === 0, disabled: false };
+    }
+    function renderTabs() {
+      tabs.querySelectorAll('[data-stage]').forEach(button => {
+        const stage = button.dataset.stage;
+        const count = orders.filter(order => orderInStage(order, stage) && matchesMenu(order) && matchesSearch(order)).length;
+        const active = stage === activeStage;
+        button.dataset.active = String(active);
+        button.setAttribute('aria-pressed', String(active));
+        const counter = button.querySelector('[data-count]');
+        if (counter) counter.textContent = count;
+      });
+    }
+    function renderItem(order, entry, boardStage, band) {
+      const done = Boolean(entry.done);
+      const moved = entry.stage !== boardStage;
+      const selected = !moved && selectedItemIds.has(entry.id);
+      const tint = moved ? '#f6f4f9' : '#ffffff';
+      const wash = moved ? '#ece8f3' : band.wash;
+      const hue = moved ? '#9c95ad' : band.accent;
+      const label = moved ? '#8b849c' : band.accent;
+      const selectStyle = selected
+        ? `color:#fff;border-color:${hue};background:${hue}`
+        : `color:${hue};border-color:${hue};background:#fff`;
+      const rowStyle = selected
+        ? `border-color:${hue};box-shadow:0 0 0 2px ${hue}55`
+        : `border-color:${moved ? '#e6e1ee' : band.border}`;
+      const toStage = moved ? STAGES[entry.stage] : null;
+      // Indikator "Move to": overlay absolut, tepat di tengah card
+      const movedPill = moved ? `<span class="moved-pill absolute left-1/2 top-1/2 z-20 inline-flex -translate-x-1/2 -translate-y-1/2 items-center whitespace-nowrap rounded-[6px] border px-[8px] py-[4px] text-[10px] font-extrabold uppercase leading-none tracking-[.04em]" style="background:${toStage.soft};border-color:${toStage.border};color:${toStage.deep};box-shadow:0 2px 6px rgba(39,35,63,.08)">Move to ${escapeHtml(toStage.label)}</span>` : '';
+      // Server & seat sebagai chip berlatar (paling penting di komponen ini)
+      const chip = (icon, text) => text
+        ? `<span class="item-chip" style="background:${moved ? '#efecf5' : band.wash};color:${label}">${icon}${escapeHtml(text)}</span>`
+        : '';
+      const meta = (entry.server || entry.seat)
+        ? `<div class="mt-2 flex flex-wrap items-center gap-1.5">${chip(ICONS.userSm, entry.server)}${chip(ICONS.seat, entry.seat)}</div>`
+        : '';
+      return `<div class="item-row${done ? ' is-done' : ''}${moved ? ' is-moved' : ''}${selected ? ' is-selected' : ''} relative flex overflow-hidden rounded-[12px] border" style="background:${tint};${rowStyle}" data-item-id="${escapeHtml(entry.id)}" data-item-current="${escapeHtml(entry.stage)}">
+        <div class="item-quantity flex w-[50px] shrink-0 items-center justify-center text-[18px] font-extrabold leading-none" style="background:${wash};color:${hue}" aria-label="Jumlah ${escapeHtml(entry.qty)}">${escapeHtml(entry.qty)}</div>
+        <div class="min-w-0 flex-1 py-3 pl-3 pr-1.5">
+          <p class="item-name truncate text-[15px] font-extrabold leading-[1.25] text-[#32294c]">${escapeHtml(entry.name)}</p>
+          <p class="item-note mt-[2px] text-[13.5px] font-bold leading-[1.25]" style="color:${moved ? '#a49db4' : band.accent}">${escapeHtml(entry.note)}</p>
+          ${meta}
+        </div>
+        <div class="flex shrink-0 items-center pr-2.5">
+          <button type="button" class="item-move-button${selected ? ' is-on' : ''} grid h-8 w-8 shrink-0 place-items-center rounded-full border-[1.5px] transition" style="${selectStyle}" data-item-select="${escapeHtml(entry.id)}" aria-pressed="${selected}" ${moved ? 'disabled' : ''} aria-label="${selected ? 'Batalkan pilihan' : 'Pilih'} ${escapeHtml(entry.name)} untuk dipindahkan ke stage lain">${ICONS.move}</button>
+        </div>
+        ${movedPill}
+      </div>`;
+    }
+    function selectedItemsInOrder(order, boardStage) {
+      return order.items.filter(entry => entry.stage === boardStage && selectedItemIds.has(entry.id));
+    }
+    function renderStageButtons(boardStage, selectedCount) {
+      const enabled = selectedCount > 0;
+      return Object.entries(STAGES)
+        .filter(([key]) => key !== boardStage)
+        .map(([key, config]) => `<button type="button" class="stage-choice h-[36px] min-w-0 rounded-[9px] border-[1.5px] px-1 text-xs font-semibold leading-none transition hover:-translate-y-px hover:brightness-95" style="border-color:${config.accent};color:${config.accent};background:${config.soft}" data-selected-stage="${key}" ${enabled ? '' : 'disabled'} aria-label="${enabled ? `Pindahkan ${selectedCount} item terpilih ke stage ${config.label}` : `Pilih menu terlebih dahulu untuk pindah ke stage ${config.label}`}">${escapeHtml(config.label)}</button>`)
+        .join('');
+    }
+    function renderCard(order, boardStage) {
+      const stage = STAGES[boardStage];
+      const band = bandOf(order);
+      const { active, archived } = columnItems(order, boardStage);
+      const action = actionState(order, boardStage);
+      const selectedCount = selectedItemsInOrder(order, boardStage).length;
+      const advanceDisabled = action.empty || action.disabled || !stage.next;
+      const buttonLabel = stage.action;
+      const buttonIcon = advanceDisabled ? '' : ICONS[stage.icon];
+      const moved = order.id === lastMovedId ? ' card-just-moved' : '';
+      // Item yang sudah dipindah tetap tampil (dicoret + indikator "Move to"),
+      // tetapi card hilang bila TIDAK ada lagi item aktif di stage ini.
+      const itemRows = [...active, ...archived].map(entry => renderItem(order, entry, boardStage, band)).join('');
+      const selectedNote = `${selectedCount} item selected · select a stage below`;
+      // Footer 2-keadaan: tanpa seleksi → tombol aksi + ••• · ada seleksi → 3 tombol stage
+      const actionRow = `<div class="grid grid-cols-[1fr_auto] gap-1.5">
+            <button type="button" class="action-button flex h-[36px] w-full items-center justify-center gap-2 rounded-[10px] px-2 text-[13.5px] font-extrabold tracking-[.015em] text-white transition hover:brightness-95 ${advanceDisabled ? 'cursor-not-allowed bg-slate-200 text-slate-500 shadow-none' : ''}" style="${advanceDisabled ? '' : `background:${band.accent};box-shadow:0 6px 14px ${band.accent}47`}" data-advance="${order.id}" ${advanceDisabled ? 'disabled' : ''}>${buttonIcon}<span class="truncate">${escapeHtml(buttonLabel)}</span></button>
+            <button type="button" class="grid h-[36px] w-[36px] place-items-center rounded-[10px] border border-[#e6e2ef] bg-white text-[#8b86a0] transition hover:border-[#d5cfe4] hover:bg-[#f7f5fb] hover:text-[#5d5872]" data-more="${order.id}" aria-label="Opsi lain untuk order ${escapeHtml(order.customer)}">${ICONS.more}</button>
+          </div>`;
+      const stageRow = `<p class="mb-2 text-[11px] font-semibold leading-none" style="color:${band.accent}" role="status">${escapeHtml(selectedNote)}</p>
+          <div class="grid grid-cols-3 gap-1.5" role="group" aria-label="Pindahkan item terpilih ke stage lain untuk order ${escapeHtml(order.customer)}">${renderStageButtons(boardStage, selectedCount)}</div>`;
+      return `<article class="stage-card${moved} h-fit w-full self-start overflow-hidden rounded-[14px] border-[1.5px] bg-white shadow-[0_5px_16px_rgba(109,40,190,0.07)]" style="border-color:${band.border}" data-stage="${order.stage}" data-board-stage="${boardStage}" data-order-id="${order.id}">
+        <header class="flex items-start justify-between gap-3 px-3.5 py-3" style="background:${band.soft}">
+          <div class="min-w-0">
+            <p class="flex items-center gap-1.5 text-[13px] font-extrabold uppercase leading-[1.2] tracking-[.01em] text-[#2b2740]"><span class="truncate">${escapeHtml(order.customer)}</span><span class="shrink-0" style="color:${band.accent}">${ICONS.userSm}</span></p>
+            <p class="mt-1 flex items-center gap-1.5 text-[12px] font-semibold leading-none" style="color:${band.accent}">${ICONS.clock}<span>${escapeHtml(order.time)}</span></p>
+          </div>
+          <span class="timer inline-flex h-[34px] min-w-[94px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] bg-white px-2.5 text-[15px] font-extrabold leading-none" style="border-color:${band.accent};color:${band.accent}" data-timer="${order.id}" data-band="${band.key}" aria-label="Sisa waktu ${formatTime(order.remaining)}">${ICONS.clock}<span>${formatTime(order.remaining)}</span></span>
+        </header>
+        <div class="flex items-center justify-between gap-3 px-3.5 pt-2.5">
+          <span class="inline-flex min-h-[26px] items-center rounded-[7px] border border-black/10 bg-[#f2f1f5] px-2.5 text-[12px] font-bold leading-none text-[#4d4670]">Dine In</span>
+          <span class="text-[13px] font-extrabold leading-none" style="color:${band.deep}">${escapeHtml(order.table)}</span>
+        </div>
+        <p class="order-note px-3.5 pt-2 text-[12.5px] font-medium leading-[1.35] text-[#7d7791]">&quot;${escapeHtml(order.description)}&quot;</p>
+        <div class="grid gap-2.5 px-3.5 py-3">${itemRows}</div>
+        <footer class="border-t border-[#ece7f2] px-3.5 pb-3 pt-2.5">${selectedCount ? stageRow : actionRow}</footer>
+      </article>`;
+    }
+    function renderBoard() {
+      const list = visibleOrders();
+      const stage = STAGES[activeStage];
+      const cards = list.map(order => renderCard(order, activeStage)).join('');
+      const filterNote = [selectedMenu ? `for ${escapeHtml(selectedMenu)}` : '', searchQuery ? `matching &quot;${escapeHtml(searchQuery)}&quot;` : ''].filter(Boolean).join(' ');
+      const emptyBlock = `<div class="col-span-full grid min-h-[260px] place-items-center rounded-[15px] border border-dashed border-[#e6d8f6] bg-white/60 px-6 py-9 text-center"><div><svg class="mx-auto mb-3.5 h-24 w-28" viewBox="0 0 120 96" fill="none" stroke="#b388ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M47 22c-4-5 2-8 0-14"/><path d="M63 20c-4-5 2-8 0-14"/><path d="M33 61c0-16 14-29 31-29 9 0 18 4 23 11"/><path d="M55 35c-8 5-13 15-13 26"/><path d="m77 43 8-9"/><path d="M83 30c3-3 8-2 9 2 1 4-2 7-5 8"/><path d="M91 35c3 2 4 6 1 9-3 2-7 2-10-1"/><path d="M25 62h70"/><path d="M31 62c4 10 15 16 29 16s25-6 29-16"/></svg><strong class="block text-[15px] font-bold text-[#b388ff]">No ${escapeHtml(stage.label)} Orders </strong>${filterNote ? `<span class="mt-0.5 block text-[15px] font-bold text-[#b388ff]">${filterNote}</span>` : ''}</div></div>`;
+      orderList.innerHTML = list.length ? cards : emptyBlock;
+      lastMovedId = null;
+    }
+    function render() { renderTabs(); renderBoard(); }
+    function moveItemsToStage(order, entries, fromStage, nextStage) {
+      if (!order || !STAGES[nextStage] || fromStage === nextStage) return;
+      const movable = entries.filter(entry => entry.stage === fromStage);
+      if (!movable.length) return;
+      movable.forEach(entry => {
+        entry.movedFrom = fromStage;
+        entry.stage = nextStage;
+        entry.done = false;
+        selectedItemIds.delete(entry.id);
+      });
+      // Pindah stage = stage baru → umur order di-reset → kartu kembali hijau
+      order.elapsed = 0;
+      lastMovedId = order.id;
+      saveOrders();
+      render();
+      showToast(`${movable.length} item · ${STAGES[fromStage].label} → ${STAGES[nextStage].label} · ${order.customer}`);
+    }
+    function moveSelectedToStage(order, boardStage, nextStage) {
+      if (!order) return;
+      const selected = selectedItemsInOrder(order, boardStage);
+      if (!selected.length) { showToast('Pilih menu dulu lewat tombol panah'); return; }
+      moveItemsToStage(order, selected, boardStage, nextStage);
+    }
+    function moveColumnToStage(order, fromStage, nextStage) {
+      if (!order || !STAGES[fromStage] || !STAGES[nextStage] || fromStage === nextStage) return;
+      const items = order.items.filter(entry => entry.stage === fromStage);
+      if (!items.length) { showToast(`Tidak ada item di stage ${STAGES[fromStage].label}`); return; }
+      moveItemsToStage(order, items, fromStage, nextStage);
+    }
+    function advance(order, boardStage) {
+      if (!order) return;
+      const next = STAGES[boardStage].next;
+      if (!next) { showToast(`Item di ${order.customer} sudah tersaji`); return; }
+      moveColumnToStage(order, boardStage, next);
+    }
+    orderList.addEventListener('click', event => {
+      const selectButton = event.target.closest('[data-item-select]');
+      if (selectButton) {
+        if (selectButton.disabled) return;
+        const id = selectButton.dataset.itemSelect;
+        if (selectedItemIds.has(id)) selectedItemIds.delete(id); else selectedItemIds.add(id);
+        render();
+        const restored = orderList.querySelector(`[data-item-select="${id.replace(/"/g, '\\"')}"]`);
+        if (restored) restored.focus();
+        return;
+      }
+      const check = event.target.closest('[data-check]');
+      if (check) return;
+      const stageButton = event.target.closest('[data-selected-stage]');
+      if (stageButton) {
+        if (stageButton.disabled) return;
+        const card = stageButton.closest('[data-order-id]');
+        moveSelectedToStage(getOrder(card.dataset.orderId), card.dataset.boardStage, stageButton.dataset.selectedStage);
+        return;
+      }
+      const advanceButton = event.target.closest('[data-advance]');
+      if (advanceButton && !advanceButton.disabled) advance(getOrder(advanceButton.dataset.advance), advanceButton.closest('[data-order-id]').dataset.boardStage);
+      const moreButton = event.target.closest('[data-more]');
+      if (moreButton) {
+        const card = moreButton.closest('[data-order-id]');
+        const order = getOrder(card.dataset.orderId);
+        if (order) showToast(`${order.customer} · ${order.table} · ${formatTime(order.remaining)} tersisa`);
+      }
+    });
+    orderList.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && selectedItemIds.size) {
+        selectedItemIds.clear();
+        render();
+      }
+    });
+    tabs.addEventListener('click', event => {
+      const button = event.target.closest('[data-stage]');
+      if (!button) return;
+      activeStage = button.dataset.stage;
+      render();
+    });
+    document.querySelectorAll('[data-menu-item]').forEach(button => {
+      button.addEventListener('click', () => {
+        const name = button.dataset.menuItem;
+        selectedMenu = selectedMenu === name ? '' : name;
+        document.querySelectorAll('[data-menu-item]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.menuItem === selectedMenu)));
+        render();
+        if (selectedMenu) showToast(`Filter aktif: ${selectedMenu}`);
+      });
+    });
+    // ── Search: kotak → melebar saat diklik ──
+    const searchWrap = document.getElementById('searchWrap');
+    const searchToggle = document.getElementById('searchToggle');
+    const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
+    function setSearchOpen(open) {
+      searchWrap.classList.toggle('is-open', open);
+      searchToggle.setAttribute('aria-expanded', String(open));
+      if (open) searchInput.focus();
+      else { searchInput.blur(); searchInput.value = ''; applySearch(''); }
+    }
+    function applySearch(value) {
+      searchQuery = value.trim();
+      searchWrap.classList.toggle('has-text', Boolean(searchQuery));
+      render();
+    }
+    searchToggle.addEventListener('click', () => setSearchOpen(!searchWrap.classList.contains('is-open')));
+    searchInput.addEventListener('input', () => applySearch(searchInput.value));
+    searchInput.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { event.stopPropagation(); setSearchOpen(false); }
+    });
+    searchClear.addEventListener('click', () => { searchInput.value = ''; applySearch(''); searchInput.focus(); });
+    let lastTickAt = Date.now();
+    setInterval(() => {
+      const now = Date.now();
+      const elapsed = Math.max(1, Math.round((now - lastTickAt) / 1000));
+      lastTickAt = now;
+      let changed = false;
+      let bandChanged = false;
+      orders.forEach(order => {
+        if (order.remaining > 0) { order.remaining = Math.max(0, order.remaining - elapsed); changed = true; }
+        const bandBefore = bandOf(order).key;
+        order.elapsed = elapsedOf(order) + elapsed;
+        if (bandOf(order).key !== bandBefore) bandChanged = true;
+        document.querySelectorAll(`[data-timer="${order.id}"]`).forEach(timer => {
+          timer.querySelector('span').textContent = formatTime(order.remaining);
+          timer.setAttribute('aria-label', `Sisa waktu ${formatTime(order.remaining)}`);
+        });
+      });
+      // Warna kartu ikut pita waktu → render ulang hanya saat melewati batas pita
+      if (bandChanged) render();
+      else if (changed) saveOrders();
+    }, 1000);
+    // ── App shell: sidebar, navigation & header interactions ──
+    const shellLayout = document.getElementById('shellLayout');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebarToggle) sidebarToggle.addEventListener('click', () => {
+      const collapsed = shellLayout.classList.toggle('sidebar-collapsed');
+      sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+      sidebarToggle.setAttribute('aria-label', collapsed ? 'Buka sidebar' : 'Tutup sidebar');
+    });
+    const pageTitle = document.getElementById('pageTitle');
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        document.querySelectorAll('.nav-link').forEach(item => { item.classList.remove('is-active'); item.removeAttribute('aria-current'); });
+        link.classList.add('is-active');
+        link.setAttribute('aria-current', 'page');
+        if (pageTitle) pageTitle.textContent = link.dataset.nav;
+        showToast(`Menu: ${link.dataset.nav}`);
+      });
+    });
+    const menuButtons = [...document.querySelectorAll('[data-menu-target]')];
+    function closeMenus(except) {
+      menuButtons.forEach(button => {
+        const menu = document.getElementById(button.dataset.menuTarget);
+        if (menu === except) return;
+        menu.classList.add('hidden');
+        button.setAttribute('aria-expanded', 'false');
+      });
+    }
+    menuButtons.forEach(button => {
+      const menu = document.getElementById(button.dataset.menuTarget);
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        const willOpen = menu.classList.contains('hidden');
+        closeMenus(willOpen ? menu : null);
+        menu.classList.toggle('hidden', !willOpen);
+        button.setAttribute('aria-expanded', String(willOpen));
+      });
+      menu.addEventListener('click', event => event.stopPropagation());
+    });
+    document.addEventListener('click', () => closeMenus());
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMenus(); });
+    document.querySelectorAll('[data-workspace]').forEach(option => {
+      option.addEventListener('click', () => {
+        document.querySelectorAll('[data-workspace]').forEach(item => item.classList.remove('is-selected'));
+        option.classList.add('is-selected');
+        document.getElementById('workspaceLabel').textContent = option.dataset.workspace;
+        closeMenus();
+        showToast(`Workspace: ${option.dataset.workspace}`);
+      });
+    });
+    document.querySelectorAll('[data-notification]').forEach(button => {
+      button.addEventListener('click', () => { closeMenus(); showToast(button.dataset.notification); });
+    });
+    const fullscreenButton = document.getElementById('fullscreenButton');
+    if (fullscreenButton) fullscreenButton.addEventListener('click', async () => {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await document.documentElement.requestFullscreen();
+      } catch (_) { showToast('Fullscreen tidak didukung browser ini'); }
+    });
+    render();
+  </script>
+</body>
+</html>
+
+﻿
