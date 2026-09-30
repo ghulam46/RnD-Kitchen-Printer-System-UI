@@ -475,6 +475,14 @@
           </div>`;
       const stageRow = `<p class="mb-2 text-[11px] font-semibold leading-none" style="color:${band.accent}" role="status">${escapeHtml(selectedNote)}</p>
           <div class="grid grid-cols-3 gap-1.5" role="group" aria-label="Pindahkan item terpilih ke stage lain untuk order ${escapeHtml(order.customer)}">${renderStageButtons(boardStage, selectedCount)}</div>`;
+      // Tab Served: footer hanya berisi tombol REMAKE, dan HILANG sampai ada menu yang dipilih.
+      // Aksi REMAKE berlaku hanya untuk item yang dipilih → kirim balik ke Preparing (masak ulang).
+      const remakeRow = selectedCount ? `<div class="grid grid-cols-[1fr_auto] gap-1.5">
+            <button type="button" class="action-button flex h-[36px] w-full items-center justify-center gap-2 rounded-[10px] px-2 text-[13.5px] font-extrabold tracking-[.015em] text-white transition hover:brightness-95" style="background:${band.accent};box-shadow:0 6px 14px ${band.accent}47" data-remake="${order.id}" data-remake-to="${escapeHtml(stage.remake)}" aria-label="Remake ${selectedCount} item terpilih milik order ${escapeHtml(order.customer)}">${ICONS.remake}<span class="truncate">${escapeHtml(buttonLabel)}</span>
+          </div>` : '';
+      // Tanpa seleksi di tab Served → footer dikosongkan (tanpa garis pemisah)
+      const footerContent = isRemake ? remakeRow : (selectedCount ? stageRow : actionRow);
+      const footer = footerContent ? `<footer class="border-t border-[#ece7f2] px-3.5 pb-3 pt-2.5">${footerContent}</footer>` : '';
       return `<article class="stage-card${entering}${moved} h-fit w-full self-start overflow-hidden rounded-[14px] border-[1.5px] bg-white shadow-[0_5px_16px_rgba(109,40,190,0.07)]" style="border-color:${band.border}" data-stage="${order.stage}" data-board-stage="${boardStage}" data-order-id="${order.id}">
         <header class="flex items-start justify-between gap-3 px-3.5 py-3" style="background:${band.soft}">
           <div class="min-w-0">
@@ -489,7 +497,7 @@
         </div>
         <p class="order-note px-3.5 pt-2 text-[12.5px] font-medium leading-[1.35] text-[#7d7791]">&quot;${escapeHtml(order.description)}&quot;</p>
         <div class="grid gap-2.5 px-3.5 py-3">${itemRows}</div>
-        <footer class="border-t border-[#ece7f2] px-3.5 pb-3 pt-2.5">${selectedCount ? stageRow : actionRow}</footer>
+        ${footer}
       </article>`;
     }
     function renderBoard(animateNew = false) {
@@ -558,6 +566,14 @@
         if (stageButton.disabled) return;
         const card = stageButton.closest('[data-order-id]');
         moveSelectedToStage(getOrder(card.dataset.orderId), card.dataset.boardStage, stageButton.dataset.selectedStage);
+        return;
+      }
+      // Tab Served: tombol REMAKE hanya mengirim ITEM YANG DIPILIH balik ke Preparing
+      const remakeButton = event.target.closest('[data-remake]');
+      if (remakeButton) {
+        if (remakeButton.disabled) return;
+        const card = remakeButton.closest('[data-order-id]');
+        moveSelectedToStage(getOrder(card.dataset.orderId), card.dataset.boardStage, remakeButton.dataset.remakeTo);
         return;
       }
       const advanceButton = event.target.closest('[data-advance]');
