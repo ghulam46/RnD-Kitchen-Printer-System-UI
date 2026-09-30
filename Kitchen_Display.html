@@ -247,11 +247,11 @@
       userSm: '<svg class="h-[14px] w-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg>',
       more: '<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>'
     };
-    // ── Pita waktu (elapsed order): 0-15 mtr hijau · 15-30 mtr oranye · 30-60 mtr merah ──
+    // ── Pita waktu (umur order): 0-1 mtr hijau · 1-2 mtr oranye · 2-3 mtr merah · >3 mtr merah tua ──
     const TIME_BANDS = [
-      { key: 'fresh',    max: 900,          label: 'On time',  soft: '#eaf9f1', border: '#a8dfc5', accent: '#1f9d5f', deep: '#0e5f3d', wash: '#d5f1e4' },
-      { key: 'warning',  max: 1800,         label: 'Warning',  soft: '#fff4e8', border: '#f4c28c', accent: '#ed8310', deep: '#8f4a05', wash: '#ffe9d2' },
-      { key: 'late',     max: 3600,         label: 'Late',     soft: '#fdecec', border: '#f3b3b3', accent: '#d93838', deep: '#8a1f1f', wash: '#fadada' },
+      { key: 'fresh',    max: 60,           label: 'On time',  soft: '#eaf9f1', border: '#a8dfc5', accent: '#1f9d5f', deep: '#0e5f3d', wash: '#d5f1e4' },
+      { key: 'warning',  max: 120,          label: 'Warning',  soft: '#fff4e8', border: '#f4c28c', accent: '#ed8310', deep: '#8f4a05', wash: '#ffe9d2' },
+      { key: 'late',     max: 180,          label: 'Late',     soft: '#fdecec', border: '#f3b3b3', accent: '#d93838', deep: '#8a1f1f', wash: '#fadada' },
       { key: 'overdue',  max: Number.POSITIVE_INFINITY, label: 'Overdue', soft: '#fbe0e0', border: '#e79a9a', accent: '#b91c1c', deep: '#7f1414', wash: '#f6cccc' }
     ];
     function timeBand(elapsedSeconds) {
@@ -273,21 +273,21 @@
     };
     const item = (qty, name, note = 'Crispy • More Sauce', description = '', server = '', seat = '') => ({ qty, name, note, description, server, seat });
     const makeOrder = (id, stage, customer, table, time, remaining, items, extra = {}) => ({ id, stage, customer, table, time, remaining, items, ...extra });
-    // elapsed (detik) = umur order → menentukan pita warna: <900 hijau · <1800 oranye · <3600 merah
+    // elapsed (detik) = umur order → menentukan pita warna: <60 hijau · <120 oranye · <180 merah · >180 merah tua
     const initialOrders = [
-      makeOrder(1, 'new', 'RITA SUGIARTO', 'Table 06', '15:30', 435, [item(2, 'Ayam Goreng Spesial'), item(2, 'Ayam Goreng Spesial', 'Crispy • More Sauce', '', 'Sarah', 'Seat 05'), item(2, 'Ayam Goreng Spesial'), item(2, 'Ayam Goreng Spesial', 'Crispy • More Sauce', '', 'Sarah', 'Seat 05')], { elapsed: 180, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(2, 'new', 'ANDI PRATAMA', 'Table 04', '14:30', 388, [item(2, 'Nasi Goreng Spesial', 'Extra sambal', '', 'Dimas', 'Seat 02'), item(1, 'Iced Lemon Tea', 'Less ice')], { elapsed: 1020, description: 'Extra sambal di meja, tolong cepat ya' }),
-      makeOrder(3, 'new', 'RUDI IRAWAN', 'Table 05', '15:30', 360, [item(1, 'Beef Black Pepper', 'Medium rare'), item(2, 'Hot Matcha Latte', 'Oat milk', '', 'Sarah', 'Seat 05')], { elapsed: 2340, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(4, 'new', 'RINA MELATI', 'Table 09', '15:28', 332, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(2, 'Lychee Mojito', 'Less ice')], { elapsed: 900, description: 'Pelanggan sudah menunggu lama' }),
-      makeOrder(5, 'new', 'AGUS WIJAYA', 'Table 10', '15:29', 310, [item(2, 'Choco Lava Cake', 'Warm')], { elapsed: 3900, description: 'Order terlambat, segera antre' }),
-      makeOrder(6, 'preparing', 'SITI RAHAYU', 'Table 02', '15:20', 420, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(2, 'Lychee Mojito', 'Less ice', '', 'Bayu', 'Seat 01')], { elapsed: 240, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(7, 'preparing', 'BUDI SANTOSO', 'Table 03', '15:25', 510, [item(2, 'Nasi Goreng Spesial', 'Crispy'), item(1, 'Choco Lava Cake', 'Warm')], { elapsed: 1200, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(8, 'preparing', 'DEWI ANGGRAENI', 'Table 01', '15:10', 366, [item(1, 'Beef Black Pepper', 'No onion'), item(2, 'Iced Lemon Tea', 'Less ice', '', 'Dimas', 'Seat 02')], { elapsed: 2700, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(9, 'preparing', 'FAJAR NUGROHO', 'Table 07', '15:15', 290, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(1, 'Vanilla Gelato', 'Chocolate')], { elapsed: 540, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(10, 'preparing', 'MAYA PUTRI', 'Table 08', '15:18', 244, [item(2, 'Nasi Goreng Spesial', 'Extra sambal', '', 'Sarah', 'Seat 05')], { elapsed: 1650, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(11, 'ready', 'EKO WIJAYA', 'Table 12', '15:12', 180, [item(2, 'Iced Lemon Tea', 'Less ice'), item(1, 'Choco Lava Cake', 'Warm', '', 'Bayu', 'Seat 01')], { elapsed: 210, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(12, 'ready', 'LINA KURNIA', 'Table 11', '15:05', 150, [item(1, 'Lychee Mojito', 'Less ice')], { elapsed: 1500, description: 'Siap saji ke meja 11' }),
-      makeOrder(13, 'served', 'HENDRA GUNAWAN', 'Table 07', '14:50', 0, [item(1, 'Beef Black Pepper', 'No onion')], { elapsed: 420, description: 'Lorem ipsum sit amet dolor' })
+      makeOrder(1, 'new', 'RITA SUGIARTO', 'Table 06', '15:30', 435, [item(2, 'Ayam Goreng Spesial'), item(2, 'Ayam Goreng Spesial', 'Crispy • More Sauce', '', 'Sarah', 'Seat 05'), item(2, 'Ayam Goreng Spesial'), item(2, 'Ayam Goreng Spesial', 'Crispy • More Sauce', '', 'Sarah', 'Seat 05')], { elapsed: 25, pax: 4, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(2, 'new', 'ANDI PRATAMA', 'Table 04', '14:30', 388, [item(2, 'Nasi Goreng Spesial', 'Extra sambal', '', 'Dimas', 'Seat 02'), item(1, 'Iced Lemon Tea', 'Less ice')], { elapsed: 72, pax: 2, description: 'Extra sambal di meja, tolong cepat ya' }),
+      makeOrder(3, 'new', 'RUDI IRAWAN', 'Table 05', '15:30', 360, [item(1, 'Beef Black Pepper', 'Medium rare'), item(2, 'Hot Matcha Latte', 'Oat milk', '', 'Sarah', 'Seat 05')], { elapsed: 145, pax: 2, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(4, 'new', 'RINA MELATI', 'Table 09', '15:28', 332, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(2, 'Lychee Mojito', 'Less ice')], { elapsed: 210, pax: 3, description: 'Pelanggan sudah menunggu lama' }),
+      makeOrder(5, 'new', 'AGUS WIJAYA', 'Table 10', '15:29', 310, [item(2, 'Choco Lava Cake', 'Warm')], { elapsed: 40, pax: 2, description: 'Order terlambat, segera antre' }),
+      makeOrder(6, 'preparing', 'SITI RAHAYU', 'Table 02', '15:20', 420, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(2, 'Lychee Mojito', 'Less ice', '', 'Bayu', 'Seat 01')], { elapsed: 95, pax: 2, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(7, 'preparing', 'BUDI SANTOSO', 'Table 03', '15:25', 510, [item(2, 'Nasi Goreng Spesial', 'Crispy'), item(1, 'Choco Lava Cake', 'Warm')], { elapsed: 165, pax: 3, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(8, 'preparing', 'DEWI ANGGRAENI', 'Table 01', '15:10', 366, [item(1, 'Beef Black Pepper', 'No onion'), item(2, 'Iced Lemon Tea', 'Less ice', '', 'Dimas', 'Seat 02')], { elapsed: 240, pax: 2, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(9, 'preparing', 'FAJAR NUGROHO', 'Table 07', '15:15', 290, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(1, 'Vanilla Gelato', 'Chocolate')], { elapsed: 30, pax: 4, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(10, 'preparing', 'MAYA PUTRI', 'Table 08', '15:18', 244, [item(2, 'Nasi Goreng Spesial', 'Extra sambal', '', 'Sarah', 'Seat 05')], { elapsed: 110, pax: 2, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(11, 'ready', 'EKO WIJAYA', 'Table 12', '15:12', 180, [item(2, 'Iced Lemon Tea', 'Less ice'), item(1, 'Choco Lava Cake', 'Warm', '', 'Bayu', 'Seat 01')], { elapsed: 150, pax: 4, description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(12, 'ready', 'LINA KURNIA', 'Table 11', '15:05', 150, [item(1, 'Lychee Mojito', 'Less ice')], { elapsed: 200, pax: 2, description: 'Siap saji ke meja 11' }),
+      makeOrder(13, 'served', 'HENDRA GUNAWAN', 'Table 07', '14:50', 0, [item(1, 'Beef Black Pepper', 'No onion')], { elapsed: 50, pax: 2, description: 'Lorem ipsum sit amet dolor' })
     ];
     const orderList = document.getElementById('orderList');
     const tabs = document.getElementById('statusTabs');
@@ -312,6 +312,8 @@
           ...order,
           stage: orderStage,
           description: order.description || 'Lorem ipsum sit amet dolor',
+          // Jumlah tamu (pax) → tampil di sebelah ikon orang pada header card
+          pax: Number.isFinite(order.pax) && order.pax > 0 ? Math.floor(order.pax) : 2,
           elapsed,
           remaining,
           items: (order.items || []).map((entry, index) => {
@@ -467,7 +469,7 @@
       // Item yang sudah dipindah tetap tampil (dicoret + indikator "Move to"),
       // tetapi card hilang bila TIDAK ada lagi item aktif di stage ini.
       const itemRows = [...active, ...archived].map(entry => renderItem(order, entry, boardStage, band)).join('');
-      const selectedNote = `${selectedCount} item selected · select a stage below`;
+      const selectedNote = `${selectedCount} item${selectedCount === 1 ? '' : 's'} selected · select a stage below`;
       // Footer 2-keadaan: tanpa seleksi → tombol aksi + ••• · ada seleksi → 3 tombol stage
       const actionRow = `<div class="grid grid-cols-[1fr_auto] gap-1.5">
             <button type="button" class="action-button flex h-[36px] w-full items-center justify-center gap-2 rounded-[10px] px-2 text-[13.5px] font-extrabold tracking-[.015em] text-white transition hover:brightness-95 ${advanceDisabled ? 'cursor-not-allowed bg-slate-200 text-slate-500 shadow-none' : ''}" style="${advanceDisabled ? '' : `background:${band.accent};box-shadow:0 6px 14px ${band.accent}47`}" data-advance="${order.id}" ${advanceDisabled ? 'disabled' : ''} aria-label="${escapeHtml(buttonHint)}">${buttonIcon}<span class="truncate">${escapeHtml(buttonLabel)}</span></button>
@@ -477,8 +479,9 @@
           <div class="grid grid-cols-3 gap-1.5" role="group" aria-label="Pindahkan item terpilih ke stage lain untuk order ${escapeHtml(order.customer)}">${renderStageButtons(boardStage, selectedCount)}</div>`;
       // Tab Served: footer hanya berisi tombol REMAKE, dan HILANG sampai ada menu yang dipilih.
       // Aksi REMAKE berlaku hanya untuk item yang dipilih → kirim balik ke Preparing (masak ulang).
-      const remakeRow = selectedCount ? `<div class="grid grid-cols-[1fr_auto] gap-1.5">
-            <button type="button" class="action-button flex h-[36px] w-full items-center justify-center gap-2 rounded-[10px] px-2 text-[13.5px] font-extrabold tracking-[.015em] text-white transition hover:brightness-95" style="background:${band.accent};box-shadow:0 6px 14px ${band.accent}47" data-remake="${order.id}" data-remake-to="${escapeHtml(stage.remake)}" aria-label="Remake ${selectedCount} item terpilih milik order ${escapeHtml(order.customer)}">${ICONS.remake}<span class="truncate">${escapeHtml(buttonLabel)}</span>
+      const remakeRow = selectedCount ? `<p class="mb-2 text-[11px] font-semibold leading-none" style="color:${band.accent}" role="status">${escapeHtml(selectedNote)}</p>
+          <div class="grid grid-cols-[1fr_auto] gap-1.5">
+            <button type="button" class="action-button flex h-[36px] w-full items-center justify-center gap-2 rounded-[10px] px-2 text-[13.5px] font-extrabold tracking-[.015em] text-white transition hover:brightness-95" style="background:${band.accent};box-shadow:0 6px 14px ${band.accent}47" data-remake="${order.id}" data-remake-to="${escapeHtml(stage.remake)}" aria-label="Remake ${selectedCount} item terpilih milik order ${escapeHtml(order.customer)}">${ICONS.remake}<span class="truncate">${escapeHtml(buttonLabel)}</span></button>
           </div>` : '';
       // Tanpa seleksi di tab Served → footer dikosongkan (tanpa garis pemisah)
       const footerContent = isRemake ? remakeRow : (selectedCount ? stageRow : actionRow);
@@ -486,14 +489,14 @@
       return `<article class="stage-card${entering}${moved} h-fit w-full self-start overflow-hidden rounded-[14px] border-[1.5px] bg-white shadow-[0_5px_16px_rgba(109,40,190,0.07)]" style="border-color:${band.border}" data-stage="${order.stage}" data-board-stage="${boardStage}" data-order-id="${order.id}">
         <header class="flex items-start justify-between gap-3 px-3.5 py-3" style="background:${band.soft}">
           <div class="min-w-0">
-            <p class="flex items-center gap-1.5 text-[13px] font-extrabold uppercase leading-[1.2] tracking-[.01em] text-[#2b2740]"><span class="truncate">${escapeHtml(order.customer)}</span><span class="shrink-0" style="color:${band.accent}">${ICONS.userSm}</span></p>
-            <p class="mt-1 flex items-center gap-1.5 text-[12px] font-semibold leading-none" style="color:${band.accent}">${ICONS.clock}<span>${escapeHtml(order.time)}</span></p>
+            <p class="flex items-center gap-1.5 text-[13px] font-extrabold uppercase leading-[1.2] tracking-[.01em] text-[#2b2740]"><span class="truncate">${escapeHtml(order.customer)}</span><span class="flex shrink-0 items-center gap-1" style="color:${band.accent}" title="Jumlah tamu">${ICONS.userSm}<span class="text-[12px] font-extrabold leading-none">${escapeHtml(order.pax)}</span></span></p>
+            <p class="mt-1 flex items-center gap-1.5 text-[13px] font-extrabold leading-none text-[#2b2740]">${escapeHtml(order.table)}</p>
           </div>
           <span class="timer inline-flex h-[34px] min-w-[94px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] bg-white px-2.5 text-[15px] font-extrabold leading-none" style="border-color:${band.accent};color:${band.accent}" data-timer="${order.id}" data-band="${band.key}" aria-label="Sisa waktu ${formatTime(order.remaining)}">${ICONS.clock}<span>${formatTime(order.remaining)}</span></span>
         </header>
         <div class="flex items-center justify-between gap-3 px-3.5 pt-2.5">
           <span class="inline-flex min-h-[26px] items-center rounded-[7px] border border-black/10 bg-[#f2f1f5] px-2.5 text-[12px] font-bold leading-none text-[#4d4670]">Dine In</span>
-          <span class="text-[13px] font-extrabold leading-none" style="color:${band.deep}">${escapeHtml(order.table)}</span>
+          <span class="flex items-center gap-1.5 text-[12px] font-semibold leading-none" style="color:${band.accent}">${ICONS.clock}<span>${escapeHtml(order.time)}</span></span>
         </div>
         <p class="order-note px-3.5 pt-2 text-[12.5px] font-medium leading-[1.35] text-[#7d7791]">&quot;${escapeHtml(order.description)}&quot;</p>
         <div class="grid gap-2.5 px-3.5 py-3">${itemRows}</div>
