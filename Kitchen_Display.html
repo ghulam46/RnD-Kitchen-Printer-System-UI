@@ -46,6 +46,9 @@
     .item-row.is-done .item-name, .item-row.is-done .item-note, .item-row.is-done .item-description,
     .item-row.is-moved .item-name, .item-row.is-moved .item-note, .item-row.is-moved .item-description { opacity: .5; text-decoration: line-through; }
     .item-row.is-moved { background: #faf9fc; }
+    /* Card item bisa diklik untuk memilih → kursor + hover */
+    .item-row[data-item-toggle] { cursor: pointer; }
+    .item-row[data-item-toggle]:hover { border-color: #c4b5fd !important; box-shadow: 0 0 0 2px rgba(152,16,250,.12); }
     .item-row.is-moved .item-quantity { opacity: .4; }
     .item-move-button { color: #6b6580; border-color: #ded7ea; background: #fff; }
     .item-move-button:hover:not(:disabled) { color: #7c3aed; border-color: #c4b5fd; background: #f6f2ff; }
@@ -422,7 +425,7 @@
       const meta = (entry.server || entry.seat)
         ? `<div class="mt-2 flex flex-wrap items-center gap-1.5">${chip(ICONS.userSm, entry.server)}${chip(ICONS.seat, entry.seat)}</div>`
         : '';
-      return `<div class="item-row${done ? ' is-done' : ''}${moved ? ' is-moved' : ''}${selected ? ' is-selected' : ''} relative flex overflow-hidden rounded-[12px] border" style="background:${tint};${rowStyle}" data-item-id="${escapeHtml(entry.id)}" data-item-current="${escapeHtml(entry.stage)}">
+      return `<div class="item-row${done ? ' is-done' : ''}${moved ? ' is-moved' : ''}${selected ? ' is-selected' : ''} relative flex overflow-hidden rounded-[12px] border" style="background:${tint};${rowStyle}" data-item-id="${escapeHtml(entry.id)}" data-item-current="${escapeHtml(entry.stage)}"${moved ? '' : ` data-item-toggle="${escapeHtml(entry.id)}"`} aria-label="${selected ? 'Batalkan pilihan' : 'Pilih'} ${escapeHtml(entry.name)}">
         <div class="item-quantity flex w-[50px] shrink-0 items-center justify-center text-[18px] font-extrabold leading-none" style="background:${wash};color:${hue}" aria-label="Jumlah ${escapeHtml(entry.qty)}">${escapeHtml(entry.qty)}</div>
         <div class="min-w-0 flex-1 py-3 pl-3 pr-1.5">
           <p class="item-name truncate text-[15px] font-extrabold leading-[1.25] text-[#32294c]">${escapeHtml(entry.name)}</p>
@@ -437,6 +440,11 @@
     }
     function selectedItemsInOrder(order, boardStage) {
       return order.items.filter(entry => entry.stage === boardStage && selectedItemIds.has(entry.id));
+    }
+    // Dipakai bersama oleh klik card item maupun klik tombol panah
+    function toggleItemSelection(id) {
+      if (selectedItemIds.has(id)) selectedItemIds.delete(id); else selectedItemIds.add(id);
+      render();
     }
     function renderStageButtons(boardStage, selectedCount) {
       const enabled = selectedCount > 0;
@@ -556,8 +564,16 @@
       if (selectButton) {
         if (selectButton.disabled) return;
         const id = selectButton.dataset.itemSelect;
-        if (selectedItemIds.has(id)) selectedItemIds.delete(id); else selectedItemIds.add(id);
-        render();
+        toggleItemSelection(id);
+        const restored = orderList.querySelector(`[data-item-select="${id.replace(/"/g, '\\"')}"]`);
+        if (restored) restored.focus();
+        return;
+      }
+      // Klik langsung pada card item (per menu) → pilih / batal pilih
+      const itemRow = event.target.closest('[data-item-toggle]');
+      if (itemRow) {
+        const id = itemRow.dataset.itemToggle;
+        toggleItemSelection(id);
         const restored = orderList.querySelector(`[data-item-select="${id.replace(/"/g, '\\"')}"]`);
         if (restored) restored.focus();
         return;
