@@ -38,7 +38,8 @@
       html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
     }
     button:focus-visible { outline: 3px solid rgb(124 58 237 / 35%); outline-offset: 2px; }
-    .stage-card { animation: card-in .28s ease both; }
+    /* Animasi masuk hanya untuk card yang benar-benar baru (bukan saat re-render/filter) */
+    .stage-card.card-enter { animation: card-in .28s ease both; }
     .stage-card.card-just-moved { animation: card-pop .34s cubic-bezier(.2,.8,.3,1.15); }
     @keyframes card-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes card-pop { from { opacity: .4; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
@@ -224,7 +225,7 @@
       </div>
       <section class="board-wrap flex min-h-0 min-w-0 flex-col gap-4 md:flex-1" aria-labelledby="boardHeading">
         <h1 id="boardHeading" class="sr-only">Kitchen order board</h1>
-        <div id="orderList" class="order-list grid min-h-0 max-h-[calc(100vh-197px)] auto-rows-max grid-cols-1 content-start gap-4 overflow-y-auto overscroll-contain pr-0.5 md:max-h-none md:flex-1 md:grid-cols-2 xl:grid-cols-3" aria-live="polite"></div>
+        <div id="orderList" class="order-list grid min-h-0 max-h-[calc(100vh-197px)] auto-rows-max grid-cols-1 content-start gap-4 overflow-y-auto overscroll-contain pr-0.5 md:max-h-none md:flex-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-live="polite"></div>
       </section>
     </main>
   </div>
@@ -442,7 +443,7 @@
         .map(([key, config]) => `<button type="button" class="stage-choice h-[36px] min-w-0 rounded-[9px] border-[1.5px] px-1 text-xs font-semibold leading-none transition hover:-translate-y-px hover:brightness-95" style="border-color:${config.accent};color:${config.accent};background:${config.soft}" data-selected-stage="${key}" ${enabled ? '' : 'disabled'} aria-label="${enabled ? `Pindahkan ${selectedCount} item terpilih ke stage ${config.label}` : `Pilih menu terlebih dahulu untuk pindah ke stage ${config.label}`}">${escapeHtml(config.label)}</button>`)
         .join('');
     }
-    function renderCard(order, boardStage) {
+    function renderCard(order, boardStage, animateNew = false) {
       const stage = STAGES[boardStage];
       const band = bandOf(order);
       const { active, archived } = columnItems(order, boardStage);
@@ -458,6 +459,11 @@
         ? (isRemake ? `Tidak ada item untuk di-remake` : `Order ${order.customer} sudah selesai`)
         : `${isRemake ? 'Remake' : 'Pindahkan'} order ${order.customer} ke stage ${STAGES[targetStage].label}`;
       const moved = order.id === lastMovedId ? ' card-just-moved' : '';
+      // Hanya render "umpan order baru" (move stage / load pertama) yang boleh memakai
+      // animasi card-enter. Filter menu, search, ganti tab, dan refresh render ulang
+      // kartu yang sama → tanpa animasi, tidak ada kedip.
+      const alreadyShown = orderList.querySelector(`[data-order-id="${order.id}"]`);
+      const entering = animateNew && !alreadyShown ? ' card-enter' : '';
       // Item yang sudah dipindah tetap tampil (dicoret + indikator "Move to"),
       // tetapi card hilang bila TIDAK ada lagi item aktif di stage ini.
       const itemRows = [...active, ...archived].map(entry => renderItem(order, entry, boardStage, band)).join('');
@@ -469,7 +475,7 @@
           </div>`;
       const stageRow = `<p class="mb-2 text-[11px] font-semibold leading-none" style="color:${band.accent}" role="status">${escapeHtml(selectedNote)}</p>
           <div class="grid grid-cols-3 gap-1.5" role="group" aria-label="Pindahkan item terpilih ke stage lain untuk order ${escapeHtml(order.customer)}">${renderStageButtons(boardStage, selectedCount)}</div>`;
-      return `<article class="stage-card${moved} h-fit w-full self-start overflow-hidden rounded-[14px] border-[1.5px] bg-white shadow-[0_5px_16px_rgba(109,40,190,0.07)]" style="border-color:${band.border}" data-stage="${order.stage}" data-board-stage="${boardStage}" data-order-id="${order.id}">
+      return `<article class="stage-card${entering}${moved} h-fit w-full self-start overflow-hidden rounded-[14px] border-[1.5px] bg-white shadow-[0_5px_16px_rgba(109,40,190,0.07)]" style="border-color:${band.border}" data-stage="${order.stage}" data-board-stage="${boardStage}" data-order-id="${order.id}">
         <header class="flex items-start justify-between gap-3 px-3.5 py-3" style="background:${band.soft}">
           <div class="min-w-0">
             <p class="flex items-center gap-1.5 text-[13px] font-extrabold uppercase leading-[1.2] tracking-[.01em] text-[#2b2740]"><span class="truncate">${escapeHtml(order.customer)}</span><span class="shrink-0" style="color:${band.accent}">${ICONS.userSm}</span></p>
@@ -486,16 +492,17 @@
         <footer class="border-t border-[#ece7f2] px-3.5 pb-3 pt-2.5">${selectedCount ? stageRow : actionRow}</footer>
       </article>`;
     }
-    function renderBoard() {
+    function renderBoard(animateNew = false) {
       const list = visibleOrders();
       const stage = STAGES[activeStage];
-      const cards = list.map(order => renderCard(order, activeStage)).join('');
+      const cards = list.map(order => renderCard(order, activeStage, animateNew)).join('');
       const filterNote = [selectedMenu ? `for ${escapeHtml(selectedMenu)}` : '', searchQuery ? `matching &quot;${escapeHtml(searchQuery)}&quot;` : ''].filter(Boolean).join(' ');
       const emptyBlock = `<div class="col-span-full grid min-h-[260px] place-items-center rounded-[15px] border border-dashed border-[#e6d8f6] bg-white/60 px-6 py-9 text-center"><div><svg class="mx-auto mb-3.5 h-24 w-28" viewBox="0 0 120 96" fill="none" stroke="#b388ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M47 22c-4-5 2-8 0-14"/><path d="M63 20c-4-5 2-8 0-14"/><path d="M33 61c0-16 14-29 31-29 9 0 18 4 23 11"/><path d="M55 35c-8 5-13 15-13 26"/><path d="m77 43 8-9"/><path d="M83 30c3-3 8-2 9 2 1 4-2 7-5 8"/><path d="M91 35c3 2 4 6 1 9-3 2-7 2-10-1"/><path d="M25 62h70"/><path d="M31 62c4 10 15 16 29 16s25-6 29-16"/></svg><strong class="block text-[15px] font-bold text-[#b388ff]">No ${escapeHtml(stage.label)} Orders </strong>${filterNote ? `<span class="mt-0.5 block text-[15px] font-bold text-[#b388ff]">${filterNote}</span>` : ''}</div></div>`;
       orderList.innerHTML = list.length ? cards : emptyBlock;
       lastMovedId = null;
     }
-    function render() { renderTabs(); renderBoard(); }
+    // animateNew = true hanya saat memang ada order/card baru yang masuk board
+    function render(animateNew = false) { renderTabs(); renderBoard(animateNew); }
     function moveItemsToStage(order, entries, fromStage, nextStage) {
       if (!order || !STAGES[nextStage] || fromStage === nextStage) return;
       const movable = entries.filter(entry => entry.stage === fromStage);
@@ -510,7 +517,8 @@
       order.elapsed = 0;
       lastMovedId = order.id;
       saveOrders();
-      render();
+      // Card ini benar-benar masuk board stage tujuan → boleh animasi (card-just-moved)
+      render(true);
       showToast(`${movable.length} item · ${STAGES[fromStage].label} → ${STAGES[nextStage].label} · ${order.customer}`);
     }
     function moveSelectedToStage(order, boardStage, nextStage) {
@@ -695,7 +703,8 @@
         else await document.documentElement.requestFullscreen();
       } catch (_) { showToast('Fullscreen tidak didukung browser ini'); }
     });
-    render();
+    // Render pertama: boleh animasi masuk, berikutnya filter/tab/search tidak
+    render(true);
   </script>
 </body>
 </html>
