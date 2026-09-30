@@ -101,7 +101,10 @@
     #searchWrap.is-open #searchInput { opacity: 1; visibility: visible; transition: opacity .18s ease .12s, visibility 0s linear 0s; }
     #searchClear { display: none; }
     #searchWrap.has-text #searchClear { display: grid; }
+    /* ── Refresh: ikon berputar sekali saat diklik ── */
+    #boardRefresh.is-spinning svg { animation: refresh-spin .55s cubic-bezier(.4,0,.2,1); }
     @keyframes menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes refresh-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   </style>
 </head>
 <body class="min-h-screen overflow-x-hidden bg-brand-page font-sans text-brand-ink antialiased md:overflow-hidden">
@@ -206,6 +209,9 @@
         <button type="button" data-stage="ready" aria-pressed="false" class="status-tab inline-flex h-[35px] w-[107px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-[#dedde3] bg-white px-2.5 text-sm font-bold text-[#6b6580] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange data-[active=true]:border-brand-orange data-[active=true]:bg-brand-orange data-[active=true]:text-white">Ready <span data-count="ready" class="inline-grid min-w-5 place-items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-bold leading-none text-slate-500 data-[active=true]:bg-white data-[active=true]:text-slate-800">0</span></button>
         <button type="button" data-stage="served" aria-pressed="false" class="status-tab inline-flex h-[35px] w-[92px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-[#dedde3] bg-white px-2.5 text-sm font-bold text-[#6b6580] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange data-[active=true]:border-brand-orange data-[active=true]:bg-brand-orange data-[active=true]:text-white">Served</button>
         </nav>
+        <button type="button" id="boardRefresh" class="grid h-[35px] w-[35px] shrink-0 place-items-center rounded-xl border border-[#dedde3] bg-white text-[#5d5872] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange" title="Refresh" aria-label="Muat ulang data kitchen">
+          <svg class="h-[17px] w-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        </button>
         <div id="searchWrap" class="flex h-[35px] shrink-0 items-center overflow-hidden rounded-xl border border-[#dedde3] bg-white shadow-sm">
           <button type="button" id="searchToggle" class="grid h-[35px] w-[35px] shrink-0 place-items-center text-[#5d5872] transition hover:text-brand-purple" aria-expanded="false" aria-controls="searchInput" title="Search" aria-label="Buka pencarian">
             <svg class="h-[17px] w-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -235,6 +241,7 @@
       checkCircle: '<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.7 2.7L16.5 9"/></svg>',
       move: '<svg class="h-[17px] w-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>',
       serve: '<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18h18"/><path d="M5 18v-4a7 7 0 0 1 14 0v4"/><path d="M12 7V5"/></svg>',
+      remake: '<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M20.5 4.5v5h-5"/></svg>',
       seat: '<svg class="h-[13px] w-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11V6a2 2 0 0 1 4 0v5"/><path d="M7 11h8a2 2 0 0 1 2 2v2H7z"/><path d="M9 15v5"/><path d="M15 15v3"/></svg>',
       userSm: '<svg class="h-[14px] w-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg>',
       more: '<svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>'
@@ -260,7 +267,8 @@
       new: { label: 'New', next: 'preparing', duration: 435, action: 'PREPARING', icon: 'play', soft: '#f4eeff', border: '#cda5f5', accent: '#9810fa', deep: '#4a1a86' },
       preparing: { label: 'Preparing', next: 'ready', duration: 600, action: 'READY', icon: 'checkCircle', soft: '#fff4e8', border: '#f4c28c', accent: '#d96f08', deep: '#8f4a05' },
       ready: { label: 'Ready', next: 'served', duration: 300, action: 'SERVED', icon: 'serve', soft: '#edf4ff', border: '#a9c8f8', accent: '#2667d7', deep: '#1a4a91' },
-      served: { label: 'Served', next: null, duration: 0, action: 'ORDER SERVED', icon: 'checkCircle', soft: '#eaf9f1', border: '#a8dfc5', accent: '#168b56', deep: '#0e5f3d' }
+      // Served = stage akhir: tombol aksi berubah jadi REMAKE → kirim item balik ke Preparing (masak ulang)
+      served: { label: 'Served', next: null, remake: 'preparing', duration: 0, action: 'REMAKE', icon: 'remake', soft: '#eaf9f1', border: '#a8dfc5', accent: '#168b56', deep: '#0e5f3d' }
     };
     const item = (qty, name, note = 'Crispy • More Sauce', description = '', server = '', seat = '') => ({ qty, name, note, description, server, seat });
     const makeOrder = (id, stage, customer, table, time, remaining, items, extra = {}) => ({ id, stage, customer, table, time, remaining, items, ...extra });
@@ -419,7 +427,7 @@
           ${meta}
         </div>
         <div class="flex shrink-0 items-center pr-2.5">
-          <button type="button" class="item-move-button${selected ? ' is-on' : ''} grid h-8 w-8 shrink-0 place-items-center rounded-full border-[1.5px] transition" style="${selectStyle}" data-item-select="${escapeHtml(entry.id)}" aria-pressed="${selected}" ${moved ? 'disabled' : ''} aria-label="${selected ? 'Batalkan pilihan' : 'Pilih'} ${escapeHtml(entry.name)} untuk dipindahkan ke stage lain">${ICONS.move}</button>
+          <button type="button" class="item-move-button${selected ? ' is-on' : ''} grid h-7 w-7 shrink-0 place-items-center rounded-full border-[1.5px] transition" style="${selectStyle}" data-item-select="${escapeHtml(entry.id)}" aria-pressed="${selected}" ${moved ? 'disabled' : ''} aria-label="${selected ? 'Batalkan pilihan' : 'Pilih'} ${escapeHtml(entry.name)} untuk dipindahkan ke stage lain">${ICONS.move}</button>
         </div>
         ${movedPill}
       </div>`;
@@ -440,9 +448,15 @@
       const { active, archived } = columnItems(order, boardStage);
       const action = actionState(order, boardStage);
       const selectedCount = selectedItemsInOrder(order, boardStage).length;
-      const advanceDisabled = action.empty || action.disabled || !stage.next;
+      // Stage terakhir (served) tidak punya `next`, tapi punya `remake` → tombol tetap aktif
+      const targetStage = stage.next || stage.remake || null;
+      const isRemake = !stage.next && Boolean(stage.remake);
+      const advanceDisabled = action.empty || action.disabled || !targetStage;
       const buttonLabel = stage.action;
       const buttonIcon = advanceDisabled ? '' : ICONS[stage.icon];
+      const buttonHint = advanceDisabled
+        ? (isRemake ? `Tidak ada item untuk di-remake` : `Order ${order.customer} sudah selesai`)
+        : `${isRemake ? 'Remake' : 'Pindahkan'} order ${order.customer} ke stage ${STAGES[targetStage].label}`;
       const moved = order.id === lastMovedId ? ' card-just-moved' : '';
       // Item yang sudah dipindah tetap tampil (dicoret + indikator "Move to"),
       // tetapi card hilang bila TIDAK ada lagi item aktif di stage ini.
@@ -450,7 +464,7 @@
       const selectedNote = `${selectedCount} item selected · select a stage below`;
       // Footer 2-keadaan: tanpa seleksi → tombol aksi + ••• · ada seleksi → 3 tombol stage
       const actionRow = `<div class="grid grid-cols-[1fr_auto] gap-1.5">
-            <button type="button" class="action-button flex h-[36px] w-full items-center justify-center gap-2 rounded-[10px] px-2 text-[13.5px] font-extrabold tracking-[.015em] text-white transition hover:brightness-95 ${advanceDisabled ? 'cursor-not-allowed bg-slate-200 text-slate-500 shadow-none' : ''}" style="${advanceDisabled ? '' : `background:${band.accent};box-shadow:0 6px 14px ${band.accent}47`}" data-advance="${order.id}" ${advanceDisabled ? 'disabled' : ''}>${buttonIcon}<span class="truncate">${escapeHtml(buttonLabel)}</span></button>
+            <button type="button" class="action-button flex h-[36px] w-full items-center justify-center gap-2 rounded-[10px] px-2 text-[13.5px] font-extrabold tracking-[.015em] text-white transition hover:brightness-95 ${advanceDisabled ? 'cursor-not-allowed bg-slate-200 text-slate-500 shadow-none' : ''}" style="${advanceDisabled ? '' : `background:${band.accent};box-shadow:0 6px 14px ${band.accent}47`}" data-advance="${order.id}" ${advanceDisabled ? 'disabled' : ''} aria-label="${escapeHtml(buttonHint)}">${buttonIcon}<span class="truncate">${escapeHtml(buttonLabel)}</span></button>
             <button type="button" class="grid h-[36px] w-[36px] place-items-center rounded-[10px] border border-[#e6e2ef] bg-white text-[#8b86a0] transition hover:border-[#d5cfe4] hover:bg-[#f7f5fb] hover:text-[#5d5872]" data-more="${order.id}" aria-label="Opsi lain untuk order ${escapeHtml(order.customer)}">${ICONS.more}</button>
           </div>`;
       const stageRow = `<p class="mb-2 text-[11px] font-semibold leading-none" style="color:${band.accent}" role="status">${escapeHtml(selectedNote)}</p>
@@ -513,7 +527,8 @@
     }
     function advance(order, boardStage) {
       if (!order) return;
-      const next = STAGES[boardStage].next;
+      // Tab Served: aksi tombol = remake → kirim item balik ke Preparing
+      const next = STAGES[boardStage].next || STAGES[boardStage].remake || null;
       if (!next) { showToast(`Item di ${order.customer} sudah tersaji`); return; }
       moveColumnToStage(order, boardStage, next);
     }
@@ -572,6 +587,7 @@
     const searchToggle = document.getElementById('searchToggle');
     const searchInput = document.getElementById('searchInput');
     const searchClear = document.getElementById('searchClear');
+    const boardRefresh = document.getElementById('boardRefresh');
     function setSearchOpen(open) {
       searchWrap.classList.toggle('is-open', open);
       searchToggle.setAttribute('aria-expanded', String(open));
@@ -610,6 +626,16 @@
       if (bandChanged) render();
       else if (changed) saveOrders();
     }, 1000);
+    // ── Refresh: muat ulang board tanpa membuat timer melompat ──
+    boardRefresh.addEventListener('click', () => {
+      lastTickAt = Date.now();
+      render();
+      // Restart animasi putar: hapus class → paksa reflow → pasang lagi
+      boardRefresh.classList.remove('is-spinning');
+      void boardRefresh.offsetWidth;
+      boardRefresh.classList.add('is-spinning');
+      showToast(`Data kitchen diperbarui · ${orders.length} order`);
+    });
     // ── App shell: sidebar, navigation & header interactions ──
     const shellLayout = document.getElementById('shellLayout');
     const sidebarToggle = document.getElementById('sidebarToggle');
