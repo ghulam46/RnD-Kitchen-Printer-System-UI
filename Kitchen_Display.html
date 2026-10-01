@@ -66,12 +66,13 @@
     .moved-pill { box-shadow: 0 2px 6px rgba(39, 35, 63, .07); }
     .stage-choice:disabled { border-color: #e6e0ef !important; color: #b3adc2 !important; background: #f8f6fb !important; cursor: not-allowed; }
     .stage-choice:disabled:hover { transform: none !important; filter: none !important; }
-    /* ── Dropdown tombol ••• ── */
+    /* ── Dropdown tombol ••• : daftar teks polos, tanpa ikon ── */
     .more-menu { animation: menu-in .14s ease both; }
-    .more-menu-item { display: flex; width: 100%; align-items: center; gap: 8px; border-radius: 8px; padding: 7px 9px; text-align: left; font-size: 12.5px; font-weight: 600; line-height: 1.2; color: #3d3858; transition: background .12s ease, color .12s ease; }
+    .more-menu-item { display: block; width: 100%; border-radius: 10px; padding: 11px 12px; text-align: left; font-size: 15px; font-weight: 500; line-height: 1.5; color: #5d5872; transition: background .12s ease, color .12s ease; }
     .more-menu-item:hover, .more-menu-item:focus-visible { background: #f6f2ff; color: #7c3aed; outline: none; }
-    .more-menu-item .mm-dot { width: 8px; height: 8px; flex: none; border-radius: 999px; }
-    .more-menu-sep { height: 1px; margin: 4px 7px; background: #ece7f5; }
+    /* Garis pembatas: full-width tepi-ke-tepi (margin negatif menetralkan p-2 container)
+       + space 8px di atas & bawah */
+    .more-menu-sep { height: 1px; margin: 8px -8px; background: #ece7f5; }
     .timer.is-warning { border-color: #d93838 !important; color: #c62828 !important; }
     .timer.is-warning svg { color: #d93838 !important; }
     .order-list::-webkit-scrollbar { display: none; }
@@ -133,6 +134,13 @@
     #boardRefresh.is-spinning svg { animation: refresh-spin .55s cubic-bezier(.4,0,.2,1); }
     @keyframes menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes refresh-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    /* ── Print: hanya ticket order yang ikut cetak, seluruh UI disembunyikan ── */
+    #printSheet { display: none; }
+    @media print {
+      body > *:not(#printSheet) { display: none !important; }
+      #printSheet { display: block !important; }
+      @page { margin: 12mm; }
+    }
   </style>
 </head>
 <body class="min-h-screen overflow-x-hidden bg-brand-page font-sans text-brand-ink antialiased md:overflow-hidden">
@@ -291,6 +299,11 @@
       </div>
     </aside>
   </div>
+  <!-- ══════════ DROPDOWN TOMBOL ••• : New · Preparing · Ready · Served · Print ══════════ -->
+  <!-- Satu elemen global (fixed) → tidak pernah terpotong card (overflow-hidden) atau board scroll -->
+  <div id="moreMenu" class="more-menu fixed left-0 top-0 z-[60] hidden w-[172px] rounded-xl border border-[#eae7f2] bg-white p-2 shadow-[0_12px_32px_rgba(39,35,63,.16)]" role="menu" aria-label="Ubah status order"></div>
+  <!-- ══════════ SHEET CETAK (hanya tampil saat print) ══════════ -->
+  <div id="printSheet"></div>
   <div id="toast" class="fixed bottom-5 right-5 z-20 max-w-[calc(100vw-2.5rem)] rounded-xl border border-slate-200 bg-slate-900 px-4 py-3 text-sm font-semibold text-white opacity-0 shadow-xl transition duration-200" role="status" aria-live="polite"></div>
   <script>
     const ICONS = {
@@ -517,6 +530,11 @@
         .map(([key, config]) => `<button type="button" class="stage-choice h-[36px] min-w-0 rounded-[9px] border-[1.5px] px-1 text-xs font-semibold leading-none transition hover:-translate-y-px hover:brightness-95" style="border-color:${config.accent};color:${config.accent};background:${config.soft}" data-selected-stage="${key}" ${enabled ? '' : 'disabled'} aria-label="${enabled ? `Pindahkan ${selectedCount} item terpilih ke stage ${config.label}` : `Pilih menu terlebih dahulu untuk pindah ke stage ${config.label}`}">${escapeHtml(config.label)}</button>`)
         .join('');
     }
+    // Tombol ••• dipakai di footer semua stage (termasuk Served) → dropdown bisa
+    // dipakai untuk pindah stage dari stage mana pun.
+    function renderMoreButton(order) {
+      return `<button type="button" class="grid h-[36px] w-[36px] place-items-center rounded-[10px] border border-[#e6e2ef] bg-white text-[#8b86a0] transition hover:border-[#d5cfe4] hover:bg-[#f7f5fb] hover:text-[#5d5872]" data-more="${order.id}" aria-haspopup="menu" aria-expanded="false" aria-controls="moreMenu" title="Ubah status &amp; cetak" aria-label="Ubah status atau cetak order ${escapeHtml(order.customer)}">${ICONS.more}</button>`;
+    }
     function renderCard(order, boardStage, animateNew = false) {
       const stage = STAGES[boardStage];
       const band = bandOf(order);
@@ -546,7 +564,7 @@
       // Footer 2-keadaan: tanpa seleksi → tombol aksi + ••• · ada seleksi → 3 tombol stage
       const actionRow = `<div class="grid grid-cols-[1fr_auto] gap-1.5">
             <button type="button" class="action-button flex h-[36px] w-full items-center justify-center gap-2 rounded-[10px] px-2 text-[13.5px] font-extrabold tracking-[.015em] text-white transition hover:brightness-95 ${advanceDisabled ? 'cursor-not-allowed bg-slate-200 text-slate-500 shadow-none' : ''}" style="${advanceDisabled ? '' : `background:${band.accent};box-shadow:0 6px 14px ${band.accent}47`}" data-advance="${order.id}" ${advanceDisabled ? 'disabled' : ''} aria-label="${escapeHtml(buttonHint)}">${buttonIcon}<span class="truncate">${escapeHtml(buttonLabel)}</span></button>
-            <button type="button" class="grid h-[36px] w-[36px] place-items-center rounded-[10px] border border-[#e6e2ef] bg-white text-[#8b86a0] transition hover:border-[#d5cfe4] hover:bg-[#f7f5fb] hover:text-[#5d5872]" data-more="${order.id}" aria-label="Opsi lain untuk order ${escapeHtml(order.customer)}">${ICONS.more}</button>
+            ${renderMoreButton(order)}
           </div>`;
       const stageRow = `<p class="mb-2 text-[11px] font-semibold leading-none" style="color:${band.accent}" role="status">${escapeHtml(selectedNote)}</p>
           <div class="grid grid-cols-3 gap-1.5" role="group" aria-label="Pindahkan item terpilih ke stage lain untuk order ${escapeHtml(order.customer)}">${renderStageButtons(boardStage, selectedCount)}</div>`;
@@ -555,6 +573,7 @@
       const remakeRow = selectedCount ? `<p class="mb-2 text-[11px] font-semibold leading-none" style="color:${band.accent}" role="status">${escapeHtml(selectedNote)}</p>
           <div class="grid grid-cols-[1fr_auto] gap-1.5">
             <button type="button" class="action-button flex h-[36px] w-full items-center justify-center gap-2 rounded-[10px] px-2 text-[13.5px] font-extrabold tracking-[.015em] text-white transition hover:brightness-95" style="background:${band.accent};box-shadow:0 6px 14px ${band.accent}47" data-remake="${order.id}" data-remake-to="${escapeHtml(stage.remake)}" aria-label="Remake ${selectedCount} item terpilih milik order ${escapeHtml(order.customer)}">${ICONS.remake}<span class="truncate">${escapeHtml(buttonLabel)}</span></button>
+            ${renderMoreButton(order)}
           </div>` : '';
       // Tanpa seleksi di tab Served → footer dikosongkan (tanpa garis pemisah)
       const footerContent = isRemake ? remakeRow : (selectedCount ? stageRow : actionRow);
@@ -604,7 +623,8 @@
       });
     }
     // animateNew = true hanya saat memang ada order/card baru yang masuk board
-    function render(animateNew = false) { renderTabs(); renderMenuCounts(); renderBoard(animateNew); }
+    // closeMoreMenu(): card di-re-render → tombol ••• lama hilang, menu harus ikut tutup
+    function render(animateNew = false) { closeMoreMenu(); renderTabs(); renderMenuCounts(); renderBoard(animateNew); }
     function moveItemsToStage(order, entries, fromStage, nextStage) {
       if (!order || !STAGES[nextStage] || fromStage === nextStage) return;
       const movable = entries.filter(entry => entry.stage === fromStage);
@@ -645,6 +665,112 @@
       if (!next) { showToast(`Item di ${order.customer} sudah tersaji`); return; }
       moveColumnToStage(order, boardStage, next);
     }
+    // ══════════ DROPDOWN TOMBOL ••• ══════════
+    // Isi menu: New · Preparing · Ready · Served (pindah stage) + Print (cetak ticket).
+    // Satu elemen menu global (position: fixed) karena card memakai overflow-hidden,
+    // jadi menu di dalam card akan ikut terpotong.
+    const moreMenu = document.getElementById('moreMenu');
+    const printSheet = document.getElementById('printSheet');
+    let moreMenuOrderId = null;
+    let moreMenuButton = null;
+    // Menu menyesuaikan stage card: stage yang SEDANG DIBUKA tidak dicantumkan,
+// jadi saat di New → Preparing · Ready · Served · Print (dan seterusnya).
+    function renderMoreMenu(order, boardStage) {
+      const stageItems = Object.entries(STAGES)
+        .filter(([key]) => key !== boardStage)
+        .map(([key, config]) => `<button type="button" role="menuitem" class="more-menu-item" data-more-stage="${key}" aria-label="Pindahkan order ${escapeHtml(order.customer)} dari ${escapeHtml(STAGES[boardStage].label)} ke ${escapeHtml(config.label)}">${escapeHtml(config.label)}</button>`)
+        .join('');
+      const printItem = `<button type="button" role="menuitem" class="more-menu-item" data-more-print="1" aria-label="Cetak ticket order ${escapeHtml(order.customer)}">Print</button>`;
+      // Pemisah supaya Print terasa sebagai aksi terpisah dari daftar stage
+      moreMenu.innerHTML = `${stageItems}<span class="more-menu-sep"></span>${printItem}`;
+    }
+    function closeMoreMenu(refocus = false) {
+      if (!moreMenu) return;
+      const button = moreMenuButton;
+      moreMenu.classList.add('hidden');
+      moreMenuButton = null;
+      moreMenuOrderId = null;
+      // Tombol bisa sudah hilang karena render() → jangan restore fokus ke elemen mati
+      if (button && document.contains(button)) {
+        button.setAttribute('aria-expanded', 'false');
+        if (refocus) button.focus();
+      }
+    }
+    function openMoreMenu(button) {
+      const card = button.closest('[data-order-id]');
+      if (!card || !moreMenu) return;
+      const order = getOrder(card.dataset.orderId);
+      if (!order) return;
+      const boardStage = card.dataset.boardStage;
+      moreMenuOrderId = order.id;
+      moreMenuButton = button;
+      renderMoreMenu(order, boardStage);
+      moreMenu.classList.remove('hidden');
+      button.setAttribute('aria-expanded', 'true');
+      // Ukur lalu tempatkan: default di ATAS tombol (footer ada di bawah card),
+      // membalik ke bawah bila tidak cukup ruang, selalu di dalam viewport.
+      const rect = button.getBoundingClientRect();
+      const menuRect = moreMenu.getBoundingClientRect();
+      const gap = 8;
+      const margin = 8;
+      let top = rect.top - menuRect.height - gap;
+      if (top < margin) top = Math.min(rect.bottom + gap, window.innerHeight - menuRect.height - margin);
+      let left = rect.right - menuRect.width;
+      left = Math.min(Math.max(left, margin), Math.max(margin, window.innerWidth - menuRect.width - margin));
+      moreMenu.style.top = Math.max(margin, top) + 'px';
+      moreMenu.style.left = left + 'px';
+      const focusable = moreMenu.querySelector('.more-menu-item:not([disabled])') || moreMenu.querySelector('.more-menu-item');
+      if (focusable) focusable.focus();
+    }
+    function toggleMoreMenu(button) {
+      const card = button.closest('[data-order-id]');
+      const order = card ? getOrder(card.dataset.orderId) : null;
+      if (order && moreMenuOrderId === order.id && moreMenu && !moreMenu.classList.contains('hidden')) closeMoreMenu(true);
+      else openMoreMenu(button);
+    }
+    // ── Ticket cetak (isi #printSheet, lalu dialog print browser) ──
+    function buildPrintTicket(order) {
+      const rows = order.items.map(entry => `<tr><td style="width:36px;font-weight:800;vertical-align:top">${escapeHtml(entry.qty)}x</td><td style="vertical-align:top"><strong>${escapeHtml(entry.name)}</strong>${entry.note ? `<div style="font-size:11px;font-style:italic">${escapeHtml(entry.note)}</div>` : ''}</td><td style="width:132px;font-size:11px;vertical-align:top">${escapeHtml([entry.server, entry.seat].filter(Boolean).join(' · '))}</td></tr>`).join('');
+      return `<div style="font-family:Roboto,Arial,sans-serif;color:#111;font-size:12px"><div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px"><div><div style="font-size:17px;font-weight:800">BigDeals · Kitchen</div><div style="font-size:11px">Ticket order #${escapeHtml(order.id)}</div></div><div style="font-size:11px;text-align:right">${escapeHtml(order.time)}<br />Dine In</div></div><div style="margin-bottom:6px"><strong>${escapeHtml(order.customer)}</strong> · ${escapeHtml(order.table)} · ${escapeHtml(order.pax)} pax</div>${order.description ? `<div style="margin-bottom:8px;font-size:11px;font-style:italic">&quot;${escapeHtml(order.description)}&quot;</div>` : ''}<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid #111;text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase"><th style="padding:4px 0">Qty</th><th style="padding:4px 0">Item</th><th style="padding:4px 0">Server / Seat</th></tr></thead><tbody>${rows}</tbody></table><div style="margin-top:12px;border-top:1px dashed #999;padding-top:6px;font-size:10px">Stage ${escapeHtml(STAGES[order.stage].label)} · sisa waktu ${escapeHtml(formatTime(order.remaining))}</div></div>`;
+    }
+    function printOrder(order) {
+      if (!order || !printSheet) return;
+      printSheet.innerHTML = buildPrintTicket(order);
+      showToast(`Cetak ticket ${order.customer} · ${order.table}`);
+      setTimeout(() => window.print(), 80);
+    }
+    if (moreMenu) {
+      moreMenu.addEventListener('click', event => {
+        event.stopPropagation();
+        const card = moreMenuButton ? moreMenuButton.closest('[data-order-id]') : null;
+        const order = getOrder(moreMenuOrderId);
+        const boardStage = card ? card.dataset.boardStage : null;
+        const stageButton = event.target.closest('[data-more-stage]');
+        if (stageButton) {
+          const target = stageButton.dataset.moreStage;
+          closeMoreMenu();
+          if (!order || !boardStage || target === boardStage) return;
+          moveColumnToStage(order, boardStage, target);
+          return;
+        }
+        if (event.target.closest('[data-more-print]')) { closeMoreMenu(); printOrder(order); }
+      });
+      // Navigasi keyboard: ↑/↓ berpindah item, Escape menutup + kembali ke tombol •••
+      moreMenu.addEventListener('keydown', event => {
+        const items = [...moreMenu.querySelectorAll('.more-menu-item:not([disabled])')];
+        if (!items.length) return;
+        const index = items.indexOf(document.activeElement);
+        if (event.key === 'ArrowDown') { event.preventDefault(); items[(index + 1) % items.length].focus(); }
+        else if (event.key === 'ArrowUp') { event.preventDefault(); items[(index - 1 + items.length) % items.length].focus(); }
+        else if (event.key === 'Home') { event.preventDefault(); items[0].focus(); }
+        else if (event.key === 'End') { event.preventDefault(); items[items.length - 1].focus(); }
+        else if (event.key === 'Escape') { event.preventDefault(); closeMoreMenu(true); }
+      });
+    }
+    document.addEventListener('click', () => closeMoreMenu());
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && moreMenuOrderId !== null) closeMoreMenu(true); });
+    window.addEventListener('resize', () => closeMoreMenu());
+    window.addEventListener('scroll', () => closeMoreMenu(), true);
     orderList.addEventListener('click', event => {
       const selectButton = event.target.closest('[data-item-select]');
       if (selectButton) {
@@ -685,9 +811,9 @@
       if (advanceButton && !advanceButton.disabled) advance(getOrder(advanceButton.dataset.advance), advanceButton.closest('[data-order-id]').dataset.boardStage);
       const moreButton = event.target.closest('[data-more]');
       if (moreButton) {
-        const card = moreButton.closest('[data-order-id]');
-        const order = getOrder(card.dataset.orderId);
-        if (order) showToast(`${order.customer} · ${order.table} · ${formatTime(order.remaining)} tersisa`);
+        // stopPropagation: klik ••• tidak boleh ikut menutup menu yang baru dibuka
+        event.stopPropagation();
+        toggleMoreMenu(moreButton);
       }
     });
     orderList.addEventListener('keydown', event => {
