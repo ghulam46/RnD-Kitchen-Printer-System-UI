@@ -86,6 +86,11 @@
       #boardLayout { grid-template-columns: 208px minmax(0,1fr); }
       #boardLayout.panel-collapsed { grid-template-columns: 64px minmax(0,1fr); }
     }
+    /* ── Komponen tombol ikon panel ──
+       Satu gaya untuk KEDUA tombol; keduanya hanya beda svg di dalam
+       (varian chevron-kanan dan chevron-kiri). State: default + hover. */
+    .icon-toggle { width: 35px; height: 35px; border-radius: 11px; border: 1px solid #e2c9f3; background: #f8f2ff; color: #9810fa; transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease; }
+    .icon-toggle:hover { border-color: #9810fa; background: #f3e8ff; box-shadow: 0 4px 12px rgba(152,16,250,.16); }
     .panel-collapsed #menuPanel { padding: 10px 8px; height: auto; min-height: 0; }
     .panel-collapsed #menuPanelCollapse { display: none; }
     .panel-collapsed #menuPanelExpand { display: grid; }
@@ -95,7 +100,16 @@
     .panel-collapsed [data-menu-item] { padding-left: 0; padding-right: 0; min-width: 0; }
     .panel-collapsed [data-menu-item] > span:first-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .panel-collapsed [data-menu-item] > span:last-child { display: none; }
-    /* ── Tombol menu tab: ikon garis oranye, border menebal saat aktif ── */
+    /* ── Komponen tombol ikon oranye (menu tab) ──
+       Struktur identik dengan .icon-toggle, hanya warna brand-nya oranye.
+       Dua varian ikon: chevron-kanan (drawer tutup) dan chevron-kiri (drawer buka). */
+    .icon-toggle--orange { width: 35px; height: 35px; border-radius: 12px; border: 1px solid #fbdcae; background: #fff8ef; color: #ed8310; transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease; }
+    .icon-toggle--orange:hover { border-color: #ed8310; background: #ffeed6; box-shadow: 0 4px 12px rgba(237,131,16,.18); }
+    /* Visibilitas ikon diatur oleh CSS komponen ini (bukan utilitas `hidden` Tailwind),
+       supaya tidak bergantung urutan stylesheet.
+       Ikon: MDI menu-close (≡>) saat drawer tertutup, MDI menu-open (≡<) saat terbuka. */
+    .icon-toggle--orange [data-icon="menu-open"] { display: none; }
+    /* State aktif: tombol ini memakai varian MDI menu-open (≡<) */
     .tabs-menu-toggle.is-open { border-color: #ed8310; }
     .tabs-menu-toggle.is-open [data-icon="menu-close"] { display: none; }
     .tabs-menu-toggle.is-open [data-icon="menu-open"] { display: block; }
@@ -107,8 +121,13 @@
     /* ── App shell: side navigation + top header ── */
     #appSidebar { width: 84px; transition: width .24s ease, opacity .18s ease; }
     .sidebar-collapsed #appSidebar { width: 0; min-width: 0; opacity: 0; overflow: hidden; border-right-width: 0; }
-    .nav-indicator { display: none; }
-    .nav-link.is-active, .nav-link.is-active:hover { background: #f3e8ff; color: #7c3aed; }
+    /* ── Side navigation: ikon kiri + label, aksen aktif di tepi kanan ── */
+    .nav-link { position: relative; display: flex; width: 100%; align-items: center; gap: 14px; border-radius: 14px; padding: 15px 18px; text-align: left; font-size: 15px; font-weight: 500; line-height: 1.2; color: #5d5872; transition: background .15s ease, color .15s ease; }
+    .nav-link:hover { background: #f7f4fc; color: #7c3aed; }
+    .nav-link svg { flex: none; width: 20px; height: 20px; }
+    .nav-link.is-active, .nav-link.is-active:hover { background: #f3e8ff; color: #7c3aed; font-weight: 600; }
+    /* Aksen aktif: batang ungu menempel tepi kanan baris */
+    .nav-indicator { display: none; position: absolute; right: 0; top: 0; bottom: 0; width: 4px; border-radius: 999px; background: #7c3aed; }
     .nav-link.is-active .nav-indicator { display: block; }
     [data-menu-item] { height: 36px; min-height: 36px; border-radius: 999px; padding-left: 13px; padding-right: 13px; }
     [data-menu-item][aria-pressed="true"], [data-menu-item][aria-pressed="true"]:hover { background: #9810fa; color: #fff; font-weight: 700; }
@@ -213,11 +232,11 @@
       <div class="min-h-0 flex-1 p-2 md:overflow-hidden">
   <div id="boardLayout" class="grid min-h-[calc(100vh-72px)] grid-cols-1 gap-3 overflow-y-auto p-2 md:h-full md:min-h-0 md:gap-[11px] md:overflow-hidden md:p-[5px_4px_12px]">
     <aside id="menuPanel" class="relative flex h-auto gap-4 min-h-0 flex-col overflow-hidden rounded-[11px] border border-[#e2c9f3] bg-[#f8f5fa] p-4 scrollbar-thin md:h-[calc(100vh-89px)] md:min-h-[610px]" aria-label="Menu restoran">
-      <button type="button" id="menuPanelCollapse" class="absolute right-3 top-3 z-10 grid h-[35px] w-[35px] place-items-center rounded-[11px] border border-[#e2c9f3] bg-[#f8f2ff] text-brand-purple transition hover:border-brand-purple hover:bg-[#f3e8ff]" title="Ciutkan panel" aria-label="Ciutkan panel menu" aria-expanded="true" aria-controls="menuPanelContent">
-        <svg class="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h5a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h5"/><path d="M9 4v16"/><path d="m13 9.5 2.5 2.5-2.5 2.5"/></svg>
-      </button>
-      <button type="button" id="menuPanelExpand" class="mx-auto mb-2 hidden h-[35px] w-[35px] shrink-0 place-items-center rounded-[11px] border border-[#e2c9f3] bg-[#f8f2ff] text-brand-purple transition hover:border-brand-purple hover:bg-[#f3e8ff]" title="Buka panel menu" aria-label="Buka panel menu" aria-expanded="false" aria-controls="menuPanelContent">
+      <button type="button" id="menuPanelCollapse" class="icon-toggle absolute right-3 top-3 z-10 grid place-items-center" title="Ciutkan panel" aria-label="Ciutkan panel menu" aria-expanded="true" aria-controls="menuPanelContent">
         <svg class="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h5a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h5"/><path d="M15 4v16"/><path d="M11 9.5 8.5 12l2.5 2.5"/></svg>
+      </button>
+      <button type="button" id="menuPanelExpand" class="icon-toggle mx-auto mb-2 hidden shrink-0 place-items-center" title="Buka panel menu" aria-label="Buka panel menu" aria-expanded="false" aria-controls="menuPanelContent">
+        <svg class="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h5a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h5"/><path d="M9 4v16"/><path d="m13 9.5 2.5 2.5-2.5 2.5"/></svg>
       </button>
       <div id="menuPanelContent" class="min-h-0 flex-1 overflow-y-auto">
       <section aria-labelledby="main-course-heading">
@@ -248,9 +267,9 @@
     <main class="min-h-0 min-w-0 md:flex md:h-full md:flex-col md:min-h-0">
       <div class="mb-[10px] flex h-[35px] shrink-0 items-center gap-2">
         <nav id="statusTabs" class="flex h-[35px] min-w-0 flex-1 items-stretch gap-2 overflow-x-auto" aria-label="Status pesanan">
-        <button type="button" id="tabsMenuToggle" class="tabs-menu-toggle grid h-[35px] w-[35px] shrink-0 place-items-center rounded-xl border border-[#fbdcae] bg-white text-[#ed8310] transition hover:-translate-y-px hover:border-[#ed8310]" title="Menu tab" aria-label="Buka menu tab" aria-pressed="false">
-          <svg data-icon="menu-close" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 6h10v2H3zm0 10h10v2H3zm0-5h12v2H3zm13-4l-1.42 1.39L18.14 12l-3.56 3.61L16 17l5-5z"/></svg>
-          <svg data-icon="menu-open" class="hidden h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 15.61L19.59 17l-5.01-5l5.01-5L21 8.39L17.44 12zM3 6h13v2H3zm0 7v-2h10v2zm0 5v-2h13v2z"/></svg>
+        <button type="button" id="tabsMenuToggle" class="icon-toggle--orange tabs-menu-toggle grid shrink-0 place-items-center" title="Menu tab" aria-label="Buka menu tab" aria-pressed="false">
+          <svg data-icon="menu-close" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><!-- mdi:menu-close --><path d="M3 6h10v2H3zm0 10h10v2H3zm0-5h12v2H3zm13-4l-1.42 1.39L18.14 12l-3.56 3.61L16 17l5-5z"/></svg>
+          <svg data-icon="menu-open" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><!-- mdi:menu-open --><path d="M21 15.61L19.59 17l-5.01-5l5.01-5L21 8.39L17.44 12zM3 6h13v2H3zm0 7v-2h10v2zm0 5v-2h13v2z"/></svg>
         </button>
         <button type="button" data-stage="new" aria-pressed="true" class="status-tab inline-flex h-[35px] w-[92px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-[#dedde3] bg-white px-2.5 text-sm font-bold text-[#6b6580] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange data-[active=true]:border-brand-orange data-[active=true]:bg-brand-orange data-[active=true]:text-white">New <span data-count="new" class="inline-grid min-w-5 place-items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-bold leading-none text-slate-500 data-[active=true]:bg-white data-[active=true]:text-slate-800">0</span></button>
         <button type="button" data-stage="preparing" aria-pressed="false" class="status-tab inline-flex h-[35px] w-[122px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-[#dedde3] bg-white px-2.5 text-sm font-bold text-[#6b6580] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange data-[active=true]:border-brand-orange data-[active=true]:bg-brand-orange data-[active=true]:text-white">Preparing <span data-count="preparing" class="inline-grid min-w-5 place-items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-bold leading-none text-slate-500 data-[active=true]:bg-white data-[active=true]:text-slate-800">0</span></button>
@@ -287,16 +306,23 @@
   <!-- ══════════ MODAL MENU: DRAWER SLIDE DARI KIRI ══════════ -->
   <div id="menuDrawer" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-label="Menu utama" aria-hidden="true">
     <div id="menuDrawerOverlay" class="absolute inset-0 bg-[#1b1636]/45"></div>
-    <aside id="menuDrawerPanel" class="drawer-panel absolute inset-y-0 left-0 flex w-[270px] max-w-[85vw] flex-col bg-white shadow-[0_14px_44px_rgba(27,22,54,.24)]">
-      <div class="flex items-center justify-between gap-3 px-4 py-4">
-        <a href="#" class="flex min-w-0 items-center gap-2" aria-label="BigDeals">
-          <img src="bigdeals.svg" alt="" class="h-7 w-6 shrink-0 object-contain" />
-          <span class="truncate text-[19px] font-extrabold leading-none tracking-tight text-brand-purple">BigDeals</span>
-        </a>
-        <button type="button" id="menuDrawerClose" class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] border border-[#fbdcae] bg-white text-[#ed8310] transition hover:border-[#ed8310] hover:bg-[#fff8ef]" title="Tutup menu" aria-label="Tutup menu">
-          <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 6h10v2H3zm0 10h10v2H3zm0-5h12v2H3zm13-4l-1.42 1.39L18.14 12l-3.56 3.61L16 17l5-5z"/></svg>
+    <aside id="menuDrawerPanel" class="drawer-panel absolute inset-y-0 left-0 flex w-[296px] max-w-[85vw] flex-col bg-white shadow-[0_14px_44px_rgba(27,22,54,.24)]">
+      <div class="flex shrink-0 justify-end px-5 pt-5 absolute right-0">
+        <button type="button" id="menuDrawerClose" class="icon-toggle--orange grid shrink-0 place-items-center" title="Tutup menu" aria-label="Tutup menu">
+          <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><!-- mdi:menu-open --><path d="M21 15.61L19.59 17l-5.01-5l5.01-5L21 8.39L17.44 12zM3 6h13v2H3zm0 7v-2h10v2zm0 5v-2h13v2z"/></svg>
         </button>
       </div>
+      <a href="#" class="flex shrink-0 items-center gap-3 px-6 pb-7 pt-5" aria-label="BigDeals">
+        <img src="bigdeals.svg" alt="" class="h-10 w-8 shrink-0 object-contain" />
+        <span class="truncate text-[26px] font-extrabold leading-none tracking-tight text-brand-purple">BigDeals</span>
+      </a>
+      <nav class="nav-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-4 pb-6" aria-label="Navigasi utama">
+        <button type="button" class="nav-link" data-nav="Store" title="Store" aria-label="Store"><span class="nav-indicator" aria-hidden="true"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><!-- lucide:store --><path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5m8.774-10.69a1.12 1.12 0 0 0-1.549 0a2.5 2.5 0 0 1-3.451 0a1.12 1.12 0 0 0-1.548 0a2.5 2.5 0 0 1-3.452 0a1.12 1.12 0 0 0-1.549 0a2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/></svg><span class="truncate">Store</span></button>
+        <button type="button" class="nav-link" data-nav="Calendar" title="Calendar" aria-label="Calendar"><span class="nav-indicator" aria-hidden="true"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><!-- lucide:calendar-x --><path d="M8 2v3m8-3v3"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18m-7 4l-4 4m0-4l4 4"/></svg><span class="truncate">Calendar</span></button>
+        <button type="button" class="nav-link" data-nav="Bookmark" title="Bookmark" aria-label="Bookmark"><span class="nav-indicator" aria-hidden="true"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><!-- lucide:bookmark --><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"/></svg><span class="truncate">Bookmark</span></button>
+        <button type="button" class="nav-link is-active" data-nav="Settings" title="Settings" aria-label="Settings" aria-current="page"><span class="nav-indicator" aria-hidden="true"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><!-- lucide:settings --><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0a2.34 2.34 0 0 0 3.319 1.915a2.34 2.34 0 0 1 2.33 4.033a2.34 2.34 0 0 0 0 3.831a2.34 2.34 0 0 1-2.33 4.033a2.34 2.34 0 0 0-3.319 1.915a2.34 2.34 0 0 1-4.659 0a2.34 2.34 0 0 0-3.32-1.915a2.34 2.34 0 0 1-2.33-4.033a2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg><span class="truncate">Settings</span></button>
+        <button type="button" class="nav-link" data-nav="Log out" title="Log out" aria-label="Log out"><span class="nav-indicator" aria-hidden="true"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><!-- lucide:log-out --><path d="m16 17l5-5l-5-5m5 5H9m0 9H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg><span class="truncate">Log out</span></button>
+      </nav>
     </aside>
   </div>
   <!-- ══════════ DROPDOWN TOMBOL ••• : New · Preparing · Ready · Served · Print ══════════ -->
