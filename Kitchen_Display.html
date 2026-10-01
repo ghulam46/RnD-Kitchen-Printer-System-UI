@@ -79,15 +79,21 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
     }
-    /* ── Panel menu: default TERBUKA, bisa diciutkan jadi tombol ikon ── */
+    /* ── Panel menu: default TERBUKA, bisa diciutkan jadi rail huruf depan ── */
     #boardLayout { transition: grid-template-columns .24s cubic-bezier(.4,0,.2,1); }
     @media (min-width: 768px) {
       #boardLayout { grid-template-columns: 208px minmax(0,1fr); }
-      #boardLayout.panel-collapsed { grid-template-columns: 60px minmax(0,1fr); }
+      #boardLayout.panel-collapsed { grid-template-columns: 64px minmax(0,1fr); }
     }
-    .panel-collapsed #menuPanel { padding: 10px; height: auto; min-height: 0; }
-    .panel-collapsed #menuPanelCollapse, .panel-collapsed #menuPanelContent { display: none; }
+    .panel-collapsed #menuPanel { padding: 10px 8px; height: auto; min-height: 0; }
+    .panel-collapsed #menuPanelCollapse { display: none; }
     .panel-collapsed #menuPanelExpand { display: grid; }
+    /* Rail sempit: konten tetap tampil, semua label dipotong dgn ellipsis */
+    .panel-collapsed #menuPanelContent { display: block; overflow-x: hidden; }
+    .panel-collapsed #menuPanelContent h2 { padding-right: 0; margin-left: 0; margin-right: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .panel-collapsed [data-menu-item] { padding-left: 0; padding-right: 0; min-width: 0; }
+    .panel-collapsed [data-menu-item] > span:first-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .panel-collapsed [data-menu-item] > span:last-child { display: none; }
     /* ── Tombol menu tab: ikon garis oranye, border menebal saat aktif ── */
     .tabs-menu-toggle.is-open { border-color: #ed8310; }
     .tabs-menu-toggle.is-open [data-icon="menu-close"] { display: none; }
@@ -198,9 +204,12 @@
       </header> -->
       <div class="min-h-0 flex-1 p-2 md:overflow-hidden">
   <div id="boardLayout" class="grid min-h-[calc(100vh-72px)] grid-cols-1 gap-3 overflow-y-auto p-2 md:h-full md:min-h-0 md:gap-[11px] md:overflow-hidden md:p-[5px_4px_12px]">
-    <aside id="menuPanel" class="relative flex h-auto min-h-0 flex-col overflow-hidden rounded-[11px] border border-[#e2c9f3] bg-[#f8f5fa] p-4 scrollbar-thin md:h-[calc(100vh-89px)] md:min-h-[610px]" aria-label="Menu restoran">
+    <aside id="menuPanel" class="relative flex h-auto gap-4 min-h-0 flex-col overflow-hidden rounded-[11px] border border-[#e2c9f3] bg-[#f8f5fa] p-4 scrollbar-thin md:h-[calc(100vh-89px)] md:min-h-[610px]" aria-label="Menu restoran">
       <button type="button" id="menuPanelCollapse" class="absolute right-3 top-3 z-10 grid h-[35px] w-[35px] place-items-center rounded-[11px] border border-[#e2c9f3] bg-[#f8f2ff] text-brand-purple transition hover:border-brand-purple hover:bg-[#f3e8ff]" title="Ciutkan panel" aria-label="Ciutkan panel menu" aria-expanded="true" aria-controls="menuPanelContent">
         <svg class="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h5a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h5"/><path d="M9 4v16"/><path d="m13 9.5 2.5 2.5-2.5 2.5"/></svg>
+      </button>
+      <button type="button" id="menuPanelExpand" class="mx-auto mb-2 hidden h-[35px] w-[35px] shrink-0 place-items-center rounded-[11px] border border-[#e2c9f3] bg-[#f8f2ff] text-brand-purple transition hover:border-brand-purple hover:bg-[#f3e8ff]" title="Buka panel menu" aria-label="Buka panel menu" aria-expanded="false" aria-controls="menuPanelContent">
+        <svg class="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h5a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h5"/><path d="M15 4v16"/><path d="M11 9.5 8.5 12l2.5 2.5"/></svg>
       </button>
       <div id="menuPanelContent" class="min-h-0 flex-1 overflow-y-auto">
       <section aria-labelledby="main-course-heading">
@@ -227,9 +236,6 @@
         </ul>
       </section>
       </div>
-      <button type="button" id="menuPanelExpand" class="mx-auto mt-1 hidden h-[35px] w-[35px] place-items-center rounded-[11px] border border-[#e2c9f3] bg-[#f8f2ff] text-brand-purple transition hover:border-brand-purple hover:bg-[#f3e8ff]" title="Buka panel menu" aria-label="Buka panel menu" aria-expanded="false" aria-controls="menuPanelContent">
-        <svg class="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h5a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h5"/><path d="M15 4v16"/><path d="M11 9.5 8.5 12l2.5 2.5"/></svg>
-      </button>
     </aside>
     <main class="min-h-0 min-w-0 md:flex md:h-full md:flex-col md:min-h-0">
       <div class="mb-[10px] flex h-[35px] shrink-0 items-center gap-2">
@@ -415,8 +421,7 @@
     }
     function matchesMenu(order) {
       if (!selectedMenu) return true;
-      const { active, archived } = columnItems(order, activeStage);
-      return [...active, ...archived].some(entry => entry.name === selectedMenu);
+      return filteredItems(order, activeStage).length > 0;
     }
     function matchesSearch(order) {
       if (!searchQuery) return true;
@@ -428,6 +433,14 @@
         active: order.items.filter(entry => entry.stage === stage),
         archived: order.items.filter(entry => entry.stage !== stage && entry.movedFrom === stage)
       };
+    }
+    // Sumber kebenaran tunggal untuk "item apa yang tampil di card".
+    // Saat filter menu aktif, card hanya berisi item dengan nama terpilih
+    // (mis. filter "Vanilla Gelato" → Ayam Bakar Madu disembunyikan).
+    function filteredItems(order, stage) {
+      const { active, archived } = columnItems(order, stage);
+      const all = [...active, ...archived];
+      return selectedMenu ? all.filter(entry => entry.name === selectedMenu) : all;
     }
     function orderInStage(order, stage) {
       return order.items.some(entry => entry.stage === stage);
@@ -507,9 +520,10 @@
     function renderCard(order, boardStage, animateNew = false) {
       const stage = STAGES[boardStage];
       const band = bandOf(order);
-      const { active, archived } = columnItems(order, boardStage);
       const action = actionState(order, boardStage);
-      const selectedCount = selectedItemsInOrder(order, boardStage).length;
+      // Hanya item yang lolos filter menu yang dirender DAN dihitung untuk seleksi
+      const visibleEntries = filteredItems(order, boardStage);
+      const selectedCount = visibleEntries.filter(entry => selectedItemIds.has(entry.id)).length;
       // Stage terakhir (served) tidak punya `next`, tapi punya `remake` → tombol tetap aktif
       const targetStage = stage.next || stage.remake || null;
       const isRemake = !stage.next && Boolean(stage.remake);
@@ -527,7 +541,7 @@
       const entering = animateNew && !alreadyShown ? ' card-enter' : '';
       // Item yang sudah dipindah tetap tampil (dicoret + indikator "Move to"),
       // tetapi card hilang bila TIDAK ada lagi item aktif di stage ini.
-      const itemRows = [...active, ...archived].map(entry => renderItem(order, entry, boardStage, band)).join('');
+      const itemRows = visibleEntries.map(entry => renderItem(order, entry, boardStage, band)).join('');
       const selectedNote = `${selectedCount} item${selectedCount === 1 ? '' : 's'} selected · select a stage below`;
       // Footer 2-keadaan: tanpa seleksi → tombol aksi + ••• · ada seleksi → 3 tombol stage
       const actionRow = `<div class="grid grid-cols-[1fr_auto] gap-1.5">
@@ -571,8 +585,26 @@
       orderList.innerHTML = list.length ? cards : emptyBlock;
       lastMovedId = null;
     }
+    // Badge sidebar = TOTAL PORSI item dg nama itu di seluruh stage.
+    // Angka dihitung dari data (sum qty), bukan hardcode, jadi ikut berubah
+    // saat item pindah stage / order dimuat ulang.
+    function menuPortionCount(name) {
+      return orders.reduce((total, order) => total + order.items
+        .filter(entry => entry.name === name)
+        .reduce((inner, entry) => inner + (Number(entry.qty) || 0), 0), 0);
+    }
+    function renderMenuCounts() {
+      document.querySelectorAll('[data-menu-item]').forEach(button => {
+        const badge = button.querySelector('span:last-child');
+        if (!badge) return;
+        const total = menuPortionCount(button.dataset.menuItem);
+        badge.textContent = String(total);
+        // Badge diredupkan saat 0 porsi (tidak ada yang perlu dimasak)
+        badge.style.opacity = total === 0 ? '.4' : '';
+      });
+    }
     // animateNew = true hanya saat memang ada order/card baru yang masuk board
-    function render(animateNew = false) { renderTabs(); renderBoard(animateNew); }
+    function render(animateNew = false) { renderTabs(); renderMenuCounts(); renderBoard(animateNew); }
     function moveItemsToStage(order, entries, fromStage, nextStage) {
       if (!order || !STAGES[nextStage] || fromStage === nextStage) return;
       const movable = entries.filter(entry => entry.stage === fromStage);
@@ -593,13 +625,16 @@
     }
     function moveSelectedToStage(order, boardStage, nextStage) {
       if (!order) return;
-      const selected = selectedItemsInOrder(order, boardStage);
+      // Hanya item terpilih yang TERLIHAT (lolos filter menu) yang dipindahkan
+      const selected = filteredItems(order, boardStage).filter(entry => selectedItemIds.has(entry.id));
       if (!selected.length) { showToast('Pilih menu dulu lewat tombol panah'); return; }
       moveItemsToStage(order, selected, boardStage, nextStage);
     }
     function moveColumnToStage(order, fromStage, nextStage) {
       if (!order || !STAGES[fromStage] || !STAGES[nextStage] || fromStage === nextStage) return;
-      const items = order.items.filter(entry => entry.stage === fromStage);
+      // Tombol aksi kolom: hormati filter menu → hanya item terpilih kategori itu
+      const inStage = order.items.filter(entry => entry.stage === fromStage);
+      const items = selectedMenu ? inStage.filter(entry => entry.name === selectedMenu) : inStage;
       if (!items.length) { showToast(`Tidak ada item di stage ${STAGES[fromStage].label}`); return; }
       moveItemsToStage(order, items, fromStage, nextStage);
     }
