@@ -73,6 +73,23 @@
     /* Garis pembatas: full-width tepi-ke-tepi (margin negatif menetralkan p-2 container)
        + space 8px di atas & bawah */
     .more-menu-sep { height: 1px; margin: 8px -8px; background: #ece7f5; }
+    /* ── Filter sales type: tombol pemicu (antar panel & tab New) + dropdown ── */
+    /* Default: ikon abu (text-gray-500), sama seeding tombol refresh di baris ini. */
+    .sales-toggle[aria-expanded="true"] { border-color: #9810fa; color: #9810fa; }
+    /* Filter aktif: ring ungu + titik ungu di sudut kanan atas.
+       Titik ini penanda satu-satunya, karena tombolnya tidak menampilkan teks. */
+    .sales-toggle.is-filtering { border-color: #9810fa; color: #9810fa; }
+    .sales-toggle::after { content: ''; position: absolute; top: -3px; right: -3px; width: 11px; height: 11px; border-radius: 999px; background: #9810fa; box-shadow: 0 0 0 2px #fff; opacity: 0; transform: scale(.5); transition: opacity .16s ease, transform .16s ease; pointer-events: none; }
+    .sales-toggle.is-filtering::after { opacity: 1; transform: scale(1); }
+    .sales-menu { animation: menu-in .14s ease both; }
+    .sales-menu-item { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 14px; border-radius: 12px; padding: 12px 14px; text-align: left; font-size: 15px; font-weight: 700; line-height: 1.3; color: #2b2545; transition: background .12s ease, color .12s ease; }
+    .sales-menu-item:hover, .sales-menu-item:focus-visible { background: #f6f2ff; color: #7c3aed; outline: none; }
+    /* Opsi terpilih = pil peach dengan teks oranye (aksen brand) */
+    .sales-menu-item[aria-checked="true"] { background: #fdefe0; color: #ed8310; }
+    .sales-menu-item[aria-checked="true"]:hover, .sales-menu-item[aria-checked="true"]:focus-visible { background: #fbe3ca; color: #d96f08; }
+    /* Lencana jumlah: lingkaran abu, lebar minimum sama agar angka sejajar */
+    .sales-menu-count { flex: none; min-width: 26px; border-radius: 999px; background: #ecebf3; padding: 4px 9px; text-align: center; font-size: 13px; font-weight: 700; line-height: 1; color: #6b6580; }
+    .sales-menu-item[aria-checked="true"] .sales-menu-count { background: #fff; color: #ed8310; }
     .timer.is-warning { border-color: #d93838 !important; color: #c62828 !important; }
     .timer.is-warning svg { color: #d93838 !important; }
     .order-list::-webkit-scrollbar { display: none; }
@@ -271,6 +288,13 @@
           <svg data-icon="menu-close" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><!-- mdi:menu-close --><path d="M3 6h10v2H3zm0 10h10v2H3zm0-5h12v2H3zm13-4l-1.42 1.39L18.14 12l-3.56 3.61L16 17l5-5z"/></svg>
           <svg data-icon="menu-open" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><!-- mdi:menu-open --><path d="M21 15.61L19.59 17l-5.01-5l5.01-5L21 8.39L17.44 12zM3 6h13v2H3zm0 7v-2h10v2zm0 5v-2h13v2z"/></svg>
         </button>
+        <!-- ══════ FILTER SALES TYPE: Dine In · Go Food · Takeaway ══════
+             Letak: di antara tombol panel (tabsMenuToggle) dan tab New.
+             Menu dropdown-nya global & fixed (lihat #salesTypeMenu) karena
+             #statusTabs memakai overflow-x-auto → menu di dalam nav terpotong. -->
+        <button type="button" id="salesTypeToggle" class="sales-toggle relative grid h-[35px] w-[35px] shrink-0 place-items-center rounded-xl border border-[#dedde3] bg-white text-gray-500 shadow-sm transition hover:-translate-y-px hover:border-brand-purple hover:text-brand-purple" aria-haspopup="menu" aria-expanded="false" aria-controls="salesTypeMenu" title="Filter sales type" aria-label="Filter sales type: All">
+          <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><!-- lucide:filter --><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+        </button>
         <button type="button" data-stage="new" aria-pressed="true" class="status-tab inline-flex h-[35px] w-[92px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-[#dedde3] bg-white px-2.5 text-sm font-bold text-[#6b6580] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange data-[active=true]:border-brand-orange data-[active=true]:bg-brand-orange data-[active=true]:text-white">New <span data-count="new" class="inline-grid min-w-5 place-items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-bold leading-none text-slate-500 data-[active=true]:bg-white data-[active=true]:text-slate-800">0</span></button>
         <button type="button" data-stage="preparing" aria-pressed="false" class="status-tab inline-flex h-[35px] w-[122px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-[#dedde3] bg-white px-2.5 text-sm font-bold text-[#6b6580] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange data-[active=true]:border-brand-orange data-[active=true]:bg-brand-orange data-[active=true]:text-white">Preparing <span data-count="preparing" class="inline-grid min-w-5 place-items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-bold leading-none text-slate-500 data-[active=true]:bg-white data-[active=true]:text-slate-800">0</span></button>
         <button type="button" data-stage="ready" aria-pressed="false" class="status-tab inline-flex h-[35px] w-[107px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-[#dedde3] bg-white px-2.5 text-sm font-bold text-[#6b6580] shadow-sm transition hover:-translate-y-px hover:border-brand-orange hover:text-brand-orange data-[active=true]:border-brand-orange data-[active=true]:bg-brand-orange data-[active=true]:text-white">Ready <span data-count="ready" class="inline-grid min-w-5 place-items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-bold leading-none text-slate-500 data-[active=true]:bg-white data-[active=true]:text-slate-800">0</span></button>
@@ -328,6 +352,9 @@
   <!-- ══════════ DROPDOWN TOMBOL ••• : New · Preparing · Ready · Served · Print ══════════ -->
   <!-- Satu elemen global (fixed) → tidak pernah terpotong card (overflow-hidden) atau board scroll -->
   <div id="moreMenu" class="more-menu fixed left-0 top-0 z-[60] hidden w-[172px] rounded-xl border border-[#eae7f2] bg-white p-2 shadow-[0_12px_32px_rgba(39,35,63,.16)]" role="menu" aria-label="Ubah status order"></div>
+  <!-- ══════════ DROPDOWN FILTER SALES TYPE: Semua · Dine In · Go Food · Takeaway ══════════ -->
+  <!-- Satu elemen global (fixed) → tidak pernah terpotong nav status (overflow-x-auto) -->
+  <div id="salesTypeMenu" class="sales-menu fixed left-0 top-0 z-[60] hidden w-[204px] rounded-2xl border border-[#eae7f2] bg-white p-2 shadow-[0_12px_32px_rgba(39,35,63,.16)]" role="menu" aria-label="Filter sales type"></div>
   <!-- ══════════ SHEET CETAK (hanya tampil saat print) ══════════ -->
   <div id="printSheet"></div>
   <div id="toast" class="fixed bottom-5 right-5 z-20 max-w-[calc(100vw-2.5rem)] rounded-xl border border-slate-200 bg-slate-900 px-4 py-3 text-sm font-semibold text-white opacity-0 shadow-xl transition duration-200" role="status" aria-live="polite"></div>
@@ -370,23 +397,43 @@
       // Served = stage akhir: tombol aksi berubah jadi REMAKE → kirim item balik ke Preparing (masak ulang)
       served: { label: 'Served', next: null, remake: 'preparing', duration: 0, action: 'REMAKE', icon: 'remake', soft: '#eaf9f1', border: '#a8dfc5', accent: '#168b56', deep: '#0e5f3d' }
     };
+    // ── Sales type: kategori penjualan tiap order ──
+    // soft + ink = warna chip pada card & label pada dropdown.
+    // Satu-satunya menu tanpa centang → "tidak difilter" selalu di paling atas.
+    const SALES_TYPES = {
+      dinein:   { label: 'Dine In',  soft: '#f2f1f5', ink: '#4d4670' },
+      gofood:   { label: 'Go Food',  soft: '#e8f1fd', ink: '#1f5dbe' },
+      takeaway: { label: 'Takeaway', soft: '#fdf0e3', ink: '#b25c05' }
+    };
+    const SALES_TYPE_KEYS = Object.keys(SALES_TYPES);
+    // Order lama dari localStorage belum punya salesType → ditebak dari data order:
+    // ada nomor meja =dine in,order tanpa meja (bawa pulang) = takeaway.
+    function defaultSalesType(order) {
+      const table = String(order.table || '').toLowerCase();
+      if (table.includes('table')) return 'dinein';
+      if (table.includes('go food') || table.includes('delivery')) return 'gofood';
+      return 'takeaway';
+    }
     const item = (qty, name, note = 'Crispy • More Sauce', description = '', server = '', seat = '') => ({ qty, name, note, description, server, seat });
     const makeOrder = (id, stage, customer, table, time, remaining, items, extra = {}) => ({ id, stage, customer, table, time, remaining, items, ...extra });
     // elapsed (detik) = umur order → menentukan pita warna: <60 hijau · <120 oranye · <180 merah · >180 merah tua
     const initialOrders = [
-      makeOrder(1, 'new', 'RITA SUGIARTO', 'Table 06', '15:30', 435, [item(2, 'Ayam Goreng Spesial'), item(2, 'Ayam Goreng Spesial', 'Crispy • More Sauce', '', 'Sarah', 'Seat 05'), item(2, 'Ayam Goreng Spesial'), item(2, 'Ayam Goreng Spesial', 'Crispy • More Sauce', '', 'Sarah', 'Seat 05')], { elapsed: 25, pax: 4, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(2, 'new', 'ANDI PRATAMA', 'Table 04', '14:30', 388, [item(2, 'Nasi Goreng Spesial', 'Extra sambal', '', 'Dimas', 'Seat 02'), item(1, 'Iced Lemon Tea', 'Less ice')], { elapsed: 72, pax: 2, description: 'Extra sambal di meja, tolong cepat ya' }),
-      makeOrder(3, 'new', 'RUDI IRAWAN', 'Table 05', '15:30', 360, [item(1, 'Beef Black Pepper', 'Medium rare'), item(2, 'Hot Matcha Latte', 'Oat milk', '', 'Sarah', 'Seat 05')], { elapsed: 145, pax: 2, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(4, 'new', 'RINA MELATI', 'Table 09', '15:28', 332, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(2, 'Lychee Mojito', 'Less ice')], { elapsed: 210, pax: 3, description: 'Pelanggan sudah menunggu lama' }),
-      makeOrder(5, 'new', 'AGUS WIJAYA', 'Table 10', '15:29', 310, [item(2, 'Choco Lava Cake', 'Warm')], { elapsed: 40, pax: 2, description: 'Order terlambat, segera antre' }),
-      makeOrder(6, 'preparing', 'SITI RAHAYU', 'Table 02', '15:20', 420, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(2, 'Lychee Mojito', 'Less ice', '', 'Bayu', 'Seat 01')], { elapsed: 95, pax: 2, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(7, 'preparing', 'BUDI SANTOSO', 'Table 03', '15:25', 510, [item(2, 'Nasi Goreng Spesial', 'Crispy'), item(1, 'Choco Lava Cake', 'Warm')], { elapsed: 165, pax: 3, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(8, 'preparing', 'DEWI ANGGRAENI', 'Table 01', '15:10', 366, [item(1, 'Beef Black Pepper', 'No onion'), item(2, 'Iced Lemon Tea', 'Less ice', '', 'Dimas', 'Seat 02')], { elapsed: 240, pax: 2, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(9, 'preparing', 'FAJAR NUGROHO', 'Table 07', '15:15', 290, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(1, 'Vanilla Gelato', 'Chocolate')], { elapsed: 30, pax: 4, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(10, 'preparing', 'MAYA PUTRI', 'Table 08', '15:18', 244, [item(2, 'Nasi Goreng Spesial', 'Extra sambal', '', 'Sarah', 'Seat 05')], { elapsed: 110, pax: 2, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(11, 'ready', 'EKO WIJAYA', 'Table 12', '15:12', 180, [item(2, 'Iced Lemon Tea', 'Less ice'), item(1, 'Choco Lava Cake', 'Warm', '', 'Bayu', 'Seat 01')], { elapsed: 150, pax: 4, description: 'Lorem ipsum sit amet dolor' }),
-      makeOrder(12, 'ready', 'LINA KURNIA', 'Table 11', '15:05', 150, [item(1, 'Lychee Mojito', 'Less ice')], { elapsed: 200, pax: 2, description: 'Siap saji ke meja 11' }),
-      makeOrder(13, 'served', 'HENDRA GUNAWAN', 'Table 07', '14:50', 0, [item(1, 'Beef Black Pepper', 'No onion')], { elapsed: 50, pax: 2, description: 'Lorem ipsum sit amet dolor' })
+      makeOrder(1, 'new', 'RITA SUGIARTO', 'Table 06', '15:30', 435, [item(2, 'Ayam Goreng Spesial'), item(2, 'Ayam Goreng Spesial', 'Crispy • More Sauce', '', 'Sarah', 'Seat 05'), item(2, 'Ayam Goreng Spesial'), item(2, 'Ayam Goreng Spesial', 'Crispy • More Sauce', '', 'Sarah', 'Seat 05')], { elapsed: 25, pax: 4, salesType: 'dinein', description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(2, 'new', 'ANDI PRATAMA', 'Table 04', '14:30', 388, [item(2, 'Nasi Goreng Spesial', 'Extra sambal', '', 'Dimas', 'Seat 02'), item(1, 'Iced Lemon Tea', 'Less ice')], { elapsed: 72, pax: 2, salesType: 'dinein', description: 'Extra sambal di meja, tolong cepat ya' }),
+      makeOrder(3, 'new', 'RUDI IRAWAN', 'Table 05', '15:30', 360, [item(1, 'Beef Black Pepper', 'Medium rare'), item(2, 'Hot Matcha Latte', 'Oat milk', '', 'Sarah', 'Seat 05')], { elapsed: 145, pax: 2, salesType: 'dinein', description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(4, 'new', 'RINA MELATI', 'Go Food #21', '15:28', 332, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(2, 'Lychee Mojito', 'Less ice')], { elapsed: 210, pax: 3, salesType: 'gofood', description: 'Pelanggan sudah menunggu lama' }),
+      makeOrder(5, 'new', 'AGUS WIJAYA', 'Takeaway #32', '15:29', 310, [item(2, 'Choco Lava Cake', 'Warm')], { elapsed: 40, pax: 2, salesType: 'takeaway', description: 'Order terlambat, segera antre' }),
+      makeOrder(6, 'preparing', 'SITI RAHAYU', 'Table 02', '15:20', 420, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(2, 'Lychee Mojito', 'Less ice', '', 'Bayu', 'Seat 01')], { elapsed: 95, pax: 2, salesType: 'dinein', description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(7, 'preparing', 'BUDI SANTOSO', 'Table 03', '15:25', 510, [item(2, 'Nasi Goreng Spesial', 'Crispy'), item(1, 'Choco Lava Cake', 'Warm')], { elapsed: 165, pax: 3, salesType: 'dinein', description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(8, 'preparing', 'DEWI ANGGRAENI', 'Go Food #18', '15:10', 366, [item(1, 'Beef Black Pepper', 'No onion'), item(2, 'Iced Lemon Tea', 'Less ice', '', 'Dimas', 'Seat 02')], { elapsed: 240, pax: 2, salesType: 'gofood', description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(9, 'preparing', 'FAJAR NUGROHO', 'Takeaway #25', '15:15', 290, [item(1, 'Ayam Bakar Madu', 'Extra sauce'), item(1, 'Vanilla Gelato', 'Chocolate')], { elapsed: 30, pax: 4, salesType: 'takeaway', description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(10, 'preparing', 'MAYA PUTRI', 'Table 08', '15:18', 244, [item(2, 'Nasi Goreng Spesial', 'Extra sambal', '', 'Sarah', 'Seat 05')], { elapsed: 110, pax: 2, salesType: 'dinein', description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(11, 'ready', 'EKO WIJAYA', 'Table 12', '15:12', 180, [item(2, 'Iced Lemon Tea', 'Less ice'), item(1, 'Choco Lava Cake', 'Warm', '', 'Bayu', 'Seat 01')], { elapsed: 150, pax: 4, salesType: 'dinein', description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(12, 'ready', 'LINA KURNIA', 'Go Food #09', '15:05', 150, [item(1, 'Lychee Mojito', 'Less ice')], { elapsed: 200, pax: 2, salesType: 'gofood', description: 'Siap saji ke meja 11' }),
+      makeOrder(13, 'served', 'HENDRA GUNAWAN', 'Takeaway #14', '14:50', 0, [item(1, 'Beef Black Pepper', 'No onion')], { elapsed: 50, pax: 2, salesType: 'takeaway', description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(14, 'ready', 'YUNI SARI', 'Table 04', '14:55', 120, [item(1, 'Ayam Goreng Spesial', 'Crispy • More Sauce', '', 'Sarah', 'Seat 05'), item(1, 'Iced Lemon Tea', 'Less ice')], { elapsed: 120, pax: 3, salesType: 'takeaway', description: 'Dikirim lewat GoSend, mohon ignore bila delay' }),
+      makeOrder(15, 'served', 'TOMMY GUNAWAN', 'Table 09', '14:35', 0, [item(2, 'Nasi Goreng Spesial', 'Extra sambal', '', 'Bayu', 'Seat 01')], { elapsed: 300, pax: 2, salesType: 'dinein', description: 'Lorem ipsum sit amet dolor' }),
+      makeOrder(16, 'served', 'SARI DEWI', 'Go Food #12', '14:30', 0, [item(1, 'Vanilla Gelato', 'Chocolate')], { elapsed: 420, pax: 1, salesType: 'gofood', description: 'Diambil sendiri di outlet' })
     ];
     const orderList = document.getElementById('orderList');
     const tabs = document.getElementById('statusTabs');
@@ -395,6 +442,9 @@
     let activeStage = 'new';
     let selectedMenu = '';
     let searchQuery = '';
+    // Sales type aktif ('' = semua). Disimpan ke localStorage agar pilihan
+    // tetap berlaku saat tab di-refresh (data order juga persistent di sana).
+    let activeSalesType = loadSalesType();
     let lastMovedId = null;
     const selectedItemIds = new Set();
     let toastTimer;
@@ -411,6 +461,8 @@
           ...order,
           stage: orderStage,
           description: order.description || 'Lorem ipsum sit amet dolor',
+          // Sales type → bahan filter dropdown (data lama di-backfill lewat defaultSalesType)
+          salesType: SALES_TYPES[order.salesType] ? order.salesType : defaultSalesType(order),
           // Jumlah tamu (pax) → tampil di sebelah ikon orang pada header card
           pax: Number.isFinite(order.pax) && order.pax > 0 ? Math.floor(order.pax) : 2,
           elapsed,
@@ -440,6 +492,18 @@
     function saveOrders() {
       try { localStorage.setItem('kitchen-board-orders-v2', JSON.stringify(orders)); } catch (_) { /* persistence is optional */ }
     }
+    // Preferensi filter sales type: nilai rusak / tak dikenal → '' (semua).
+    function loadSalesType() {
+      try {
+        const saved = localStorage.getItem('kitchen-board-sales-type');
+        return SALES_TYPES[saved] ? saved : '';
+      } catch (_) { return ''; }
+    }
+    function saveSalesType(value) {
+      activeSalesType = SALES_TYPES[value] ? value : '';
+      try { localStorage.setItem('kitchen-board-sales-type', activeSalesType); } catch (_) { /* persistence is optional */ }
+      return activeSalesType;
+    }
     function formatTime(seconds) {
       const value = Math.max(0, Number(seconds) || 0);
       return String(Math.floor(value / 60)).padStart(2, '0') + ':' + String(value % 60).padStart(2, '0');
@@ -467,6 +531,16 @@
       const haystack = [order.customer, order.table, ...order.items.map(entry => entry.name)].join(' ').toLowerCase();
       return haystack.includes(searchQuery.toLowerCase());
     }
+    // ── Filter sales type: '' = semua · dinein | gofood | takeaway ──
+    // Berdiri sendiri (tidak ikut selectedMenu / search) supaya satu filter
+    // tidak diam-diam menimpa filter lain.
+    function matchesSalesType(order) {
+      if (!activeSalesType) return true;
+      return order.salesType === activeSalesType;
+    }
+    function salesLabel(key) {
+      return key && SALES_TYPES[key] ? SALES_TYPES[key].label : 'All';
+    }
     function columnItems(order, stage) {
       return {
         active: order.items.filter(entry => entry.stage === stage),
@@ -485,7 +559,7 @@
       return order.items.some(entry => entry.stage === stage);
     }
     function visibleOrders() {
-      return orders.filter(order => orderInStage(order, activeStage) && matchesMenu(order) && matchesSearch(order));
+      return orders.filter(order => orderInStage(order, activeStage) && matchesMenu(order) && matchesSearch(order) && matchesSalesType(order));
     }
     function actionState(order, stage) {
       const config = STAGES[stage];
@@ -496,7 +570,7 @@
     function renderTabs() {
       tabs.querySelectorAll('[data-stage]').forEach(button => {
         const stage = button.dataset.stage;
-        const count = orders.filter(order => orderInStage(order, stage) && matchesMenu(order) && matchesSearch(order)).length;
+        const count = orders.filter(order => orderInStage(order, stage) && matchesMenu(order) && matchesSearch(order) && matchesSalesType(order)).length;
         const active = stage === activeStage;
         button.dataset.active = String(active);
         button.setAttribute('aria-pressed', String(active));
@@ -564,6 +638,7 @@
     function renderCard(order, boardStage, animateNew = false) {
       const stage = STAGES[boardStage];
       const band = bandOf(order);
+      const sales = SALES_TYPES[order.salesType] || SALES_TYPES.dinein;
       const action = actionState(order, boardStage);
       // Hanya item yang lolos filter menu yang dirender DAN dihitung untuk seleksi
       const visibleEntries = filteredItems(order, boardStage);
@@ -613,7 +688,7 @@
           <span class="timer inline-flex h-[34px] min-w-[94px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] bg-white px-2.5 text-[15px] font-extrabold leading-none" style="border-color:${band.header};color:${band.header}" data-timer="${order.id}" data-band="${band.key}" aria-label="Sisa waktu ${formatTime(order.remaining)}">${ICONS.clock}<span>${formatTime(order.remaining)}</span></span>
         </header>
         <div class="flex items-center justify-between gap-3 px-3.5 pt-2.5">
-          <span class="inline-flex min-h-[26px] items-center rounded-[7px] border border-black/10 bg-[#f2f1f5] px-2.5 text-[12px] font-bold leading-none text-[#4d4670]">Dine In</span>
+          <span class="inline-flex min-h-[26px] items-center rounded-[7px] border border-black/10 px-2.5 text-[12px] font-bold leading-none" style="background:${sales.soft};color:${sales.ink}" title="Sales type: ${escapeHtml(sales.label)}">${escapeHtml(sales.label)}</span>
           <span class="flex items-center gap-1.5 text-[12px] font-semibold leading-none" style="color:${band.accent}">${ICONS.clock}<span>${escapeHtml(order.time)}</span></span>
         </div>
         <p class="order-note px-3.5 pt-2 text-[12.5px] font-medium leading-[1.35] text-[#7d7791]">&quot;${escapeHtml(order.description)}&quot;</p>
@@ -625,7 +700,7 @@
       const list = visibleOrders();
       const stage = STAGES[activeStage];
       const cards = list.map(order => renderCard(order, activeStage, animateNew)).join('');
-      const filterNote = [selectedMenu ? `for ${escapeHtml(selectedMenu)}` : '', searchQuery ? `matching &quot;${escapeHtml(searchQuery)}&quot;` : ''].filter(Boolean).join(' ');
+      const filterNote = [selectedMenu ? `for ${escapeHtml(selectedMenu)}` : '', searchQuery ? `matching &quot;${escapeHtml(searchQuery)}&quot;` : '', activeSalesType ? `· ${escapeHtml(salesLabel(activeSalesType))}` : ''].filter(Boolean).join(' ');
       const emptyBlock = `<div class="col-span-full grid min-h-[260px] place-items-center rounded-[15px] border border-dashed border-[#e6d8f6] bg-white/60 px-6 py-9 text-center"><div><svg class="mx-auto mb-3.5 h-24 w-28" viewBox="0 0 120 96" fill="none" stroke="#b388ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M47 22c-4-5 2-8 0-14"/><path d="M63 20c-4-5 2-8 0-14"/><path d="M33 61c0-16 14-29 31-29 9 0 18 4 23 11"/><path d="M55 35c-8 5-13 15-13 26"/><path d="m77 43 8-9"/><path d="M83 30c3-3 8-2 9 2 1 4-2 7-5 8"/><path d="M91 35c3 2 4 6 1 9-3 2-7 2-10-1"/><path d="M25 62h70"/><path d="M31 62c4 10 15 16 29 16s25-6 29-16"/></svg><strong class="block text-[15px] font-bold text-[#b388ff]">No ${escapeHtml(stage.label)} Orders </strong>${filterNote ? `<span class="mt-0.5 block text-[15px] font-bold text-[#b388ff]">${filterNote}</span>` : ''}</div></div>`;
       orderList.innerHTML = list.length ? cards : emptyBlock;
       lastMovedId = null;
@@ -648,9 +723,117 @@
         badge.style.opacity = total === 0 ? '.4' : '';
       });
     }
+    // ══════════ FILTER SALES TYPE (dropdown: Semua · Dine In · Go Food · Takeaway) ══════════
+    // Berdiri sendiri dari filter menu & search: angka di dropdown dihitung dari
+    // stage + menu + search saja, TANPA ikut sales type yang sedang aktif,
+    // supaya hitungannya tidak selalu berubah saat memilih.
+    const salesTypeMenu = document.getElementById('salesTypeMenu');
+    const salesTypeToggle = document.getElementById('salesTypeToggle');
+    let salesTypeOpen = false;
+    // Order yang lolos filter lain (menu, search) pada stage aktif.
+    function ordersIgnoringSalesType(stage) {
+      return orders.filter(order => orderInStage(order, stage) && matchesMenu(order) && matchesSearch(order));
+    }
+    function salesTypeCount(key) {
+      const pool = ordersIgnoringSalesType(activeStage);
+      return key ? pool.filter(order => order.salesType === key).length : pool.length;
+    }
+    function renderSalesTypeMenu() {
+      if (!salesTypeMenu) return;
+      // Baris "All" = reset filter (tanpa lencana jumlah) dan selalu paling atas.
+      const rows = [{
+        key: '', label: 'All',
+        html: `<span class="truncate">All</span>`
+      }].concat(SALES_TYPE_KEYS.map(key => ({
+        key,
+        label: SALES_TYPES[key].label,
+        count: salesTypeCount(key),
+        html: `<span class="truncate">${escapeHtml(SALES_TYPES[key].label)}</span><span class="sales-menu-count">${salesTypeCount(key)}</span>`
+      })));
+      salesTypeMenu.innerHTML = rows.map(row => {
+        const selected = row.key === activeSalesType;
+        const state = row.count === undefined ? '' : `, ${row.count} order`;
+        return `<button type="button" role="menuitemradio" class="sales-menu-item" data-sales-type="${row.key}" aria-checked="${selected}" aria-label="${escapeHtml(row.label)}${state}">${row.html}</button>`;
+      }).join('');
+    }
+    function renderSalesTypeToggle() {
+      if (!salesTypeToggle) return;
+      const label = salesLabel(activeSalesType);
+      // Ikon saja (tanpa teks) → status filter disampaikan lewat title + aria-label
+      salesTypeToggle.title = `Filter sales type: ${label}`;
+      salesTypeToggle.setAttribute('aria-label', `Filter sales type: ${label}`);
+      // is-filtering → tombol menyala ungu saat ada filter aktif
+      salesTypeToggle.classList.toggle('is-filtering', Boolean(activeSalesType));
+    }
+    // Ukur → tempatkan di bawah tombol, dijaga tetap di dalam viewport.
+    function openSalesTypeMenu() {
+      if (!salesTypeMenu || !salesTypeToggle || salesTypeOpen) return;
+      renderSalesTypeMenu();
+      salesTypeMenu.classList.remove('hidden');
+      salesTypeToggle.setAttribute('aria-expanded', 'true');
+      const rect = salesTypeToggle.getBoundingClientRect();
+      const menuRect = salesTypeMenu.getBoundingClientRect();
+      const gap = 6;
+      const margin = 8;
+      const top = Math.min(rect.bottom + gap, window.innerHeight - menuRect.height - margin);
+      const left = Math.min(Math.max(rect.left, margin), Math.max(margin, window.innerWidth - menuRect.width - margin));
+      salesTypeMenu.style.top = Math.max(margin, top) + 'px';
+      salesTypeMenu.style.left = left + 'px';
+      salesTypeOpen = true;
+      const selected = salesTypeMenu.querySelector('.sales-menu-item[aria-checked="true"]') || salesTypeMenu.querySelector('.sales-menu-item');
+      if (selected) selected.focus();
+    }
+    function closeSalesTypeMenu(refocus = false) {
+      if (!salesTypeMenu || !salesTypeOpen) return;
+      salesTypeMenu.classList.add('hidden');
+      if (salesTypeToggle) salesTypeToggle.setAttribute('aria-expanded', 'false');
+      salesTypeOpen = false;
+      if (refocus && salesTypeToggle) salesTypeToggle.focus();
+    }
+    function setSalesType(value) {
+      saveSalesType(value);
+      closeSalesTypeMenu();
+      render();
+      showToast(`Filter sales type: ${salesLabel(activeSalesType)}`);
+    }
+    if (salesTypeToggle) {
+      salesTypeToggle.addEventListener('click', event => {
+        // stopPropagation: klik tombol tidak boleh ikut menutup menu yang baru dibuka
+        event.stopPropagation();
+        if (salesTypeOpen) closeSalesTypeMenu(true); else openSalesTypeMenu();
+      });
+    }
+    if (salesTypeMenu) {
+      salesTypeMenu.addEventListener('click', event => {
+        event.stopPropagation();
+        const option = event.target.closest('[data-sales-type]');
+        if (!option) return;
+        setSalesType(option.dataset.salesType);
+        if (salesTypeToggle) salesTypeToggle.focus();
+      });
+      // Navigasi keyboard: ↑/↓ berpindah opsi, Escape menutup + kembali ke tombol
+      salesTypeMenu.addEventListener('keydown', event => {
+        const items = [...salesTypeMenu.querySelectorAll('.sales-menu-item')];
+        if (!items.length) return;
+        const index = items.indexOf(document.activeElement);
+        if (event.key === 'ArrowDown') { event.preventDefault(); items[(index + 1) % items.length].focus(); }
+        else if (event.key === 'ArrowUp') { event.preventDefault(); items[(index - 1 + items.length) % items.length].focus(); }
+        else if (event.key === 'Home') { event.preventDefault(); items[0].focus(); }
+        else if (event.key === 'End') { event.preventDefault(); items[items.length - 1].focus(); }
+        else if (event.key === 'Escape') { event.preventDefault(); closeSalesTypeMenu(true); }
+        else if (event.key === 'Tab') { closeSalesTypeMenu(); }
+      });
+    }
+    document.addEventListener('click', () => closeSalesTypeMenu());
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && salesTypeOpen) closeSalesTypeMenu(true);
+    });
+    window.addEventListener('resize', () => closeSalesTypeMenu());
+    window.addEventListener('scroll', () => closeSalesTypeMenu(), true);
     // animateNew = true hanya saat memang ada order/card baru yang masuk board
     // closeMoreMenu(): card di-re-render → tombol ••• lama hilang, menu harus ikut tutup
-    function render(animateNew = false) { closeMoreMenu(); renderTabs(); renderMenuCounts(); renderBoard(animateNew); }
+    // renderSalesTypeToggle(): label + tombol selalu sinkron dengan filter aktif
+    function render(animateNew = false) { closeMoreMenu(); renderTabs(); renderMenuCounts(); renderSalesTypeToggle(); renderBoard(animateNew); }
     function moveItemsToStage(order, entries, fromStage, nextStage) {
       if (!order || !STAGES[nextStage] || fromStage === nextStage) return;
       const movable = entries.filter(entry => entry.stage === fromStage);
@@ -756,8 +939,9 @@
     }
     // ── Ticket cetak (isi #printSheet, lalu dialog print browser) ──
     function buildPrintTicket(order) {
+      const sales = SALES_TYPES[order.salesType] || SALES_TYPES.dinein;
       const rows = order.items.map(entry => `<tr><td style="width:36px;font-weight:800;vertical-align:top">${escapeHtml(entry.qty)}x</td><td style="vertical-align:top"><strong>${escapeHtml(entry.name)}</strong>${entry.note ? `<div style="font-size:11px;font-style:italic">${escapeHtml(entry.note)}</div>` : ''}</td><td style="width:132px;font-size:11px;vertical-align:top">${escapeHtml([entry.server, entry.seat].filter(Boolean).join(' · '))}</td></tr>`).join('');
-      return `<div style="font-family:Roboto,Arial,sans-serif;color:#111;font-size:12px"><div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px"><div><div style="font-size:17px;font-weight:800">BigDeals · Kitchen</div><div style="font-size:11px">Ticket order #${escapeHtml(order.id)}</div></div><div style="font-size:11px;text-align:right">${escapeHtml(order.time)}<br />Dine In</div></div><div style="margin-bottom:6px"><strong>${escapeHtml(order.customer)}</strong> · ${escapeHtml(order.table)} · ${escapeHtml(order.pax)} pax</div>${order.description ? `<div style="margin-bottom:8px;font-size:11px;font-style:italic">&quot;${escapeHtml(order.description)}&quot;</div>` : ''}<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid #111;text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase"><th style="padding:4px 0">Qty</th><th style="padding:4px 0">Item</th><th style="padding:4px 0">Server / Seat</th></tr></thead><tbody>${rows}</tbody></table><div style="margin-top:12px;border-top:1px dashed #999;padding-top:6px;font-size:10px">Stage ${escapeHtml(STAGES[order.stage].label)} · sisa waktu ${escapeHtml(formatTime(order.remaining))}</div></div>`;
+      return `<div style="font-family:Roboto,Arial,sans-serif;color:#111;font-size:12px"><div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px"><div><div style="font-size:17px;font-weight:800">BigDeals · Kitchen</div><div style="font-size:11px">Ticket order #${escapeHtml(order.id)}</div></div><div style="font-size:11px;text-align:right">${escapeHtml(order.time)}<br />${escapeHtml(sales.label)}</div></div><div style="margin-bottom:6px"><strong>${escapeHtml(order.customer)}</strong> · ${escapeHtml(order.table)} · ${escapeHtml(order.pax)} pax</div>${order.description ? `<div style="margin-bottom:8px;font-size:11px;font-style:italic">&quot;${escapeHtml(order.description)}&quot;</div>` : ''}<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid #111;text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase"><th style="padding:4px 0">Qty</th><th style="padding:4px 0">Item</th><th style="padding:4px 0">Server / Seat</th></tr></thead><tbody>${rows}</tbody></table><div style="margin-top:12px;border-top:1px dashed #999;padding-top:6px;font-size:10px">Stage ${escapeHtml(STAGES[order.stage].label)} · sisa waktu ${escapeHtml(formatTime(order.remaining))}</div></div>`;
     }
     function printOrder(order) {
       if (!order || !printSheet) return;
